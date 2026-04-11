@@ -2,6 +2,7 @@ use engram_lib::config::Config;
 use engram_lib::db::Database;
 use engram_lib::embeddings::onnx::OnnxProvider;
 use engram_lib::embeddings::EmbeddingProvider;
+use engram_lib::jobs::pagerank_refresh::start_pagerank_refresh_job;
 use engram_lib::llm::local::{LocalModelClient, OllamaConfig};
 use engram_lib::reranker::Reranker;
 use engram_server::state::AppState;
@@ -76,6 +77,19 @@ async fn main() {
         llm,
         sessions: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
         eidolon_config: None,
+    };
+
+    // Start background PageRank refresh job if enabled.
+    let _pagerank_token = if state.config.pagerank_enabled {
+        let token = start_pagerank_refresh_job(
+            Arc::clone(&state.db),
+            Arc::clone(&state.config),
+        );
+        tracing::info!("background pagerank refresh job started");
+        Some(token)
+    } else {
+        tracing::info!("pagerank disabled -- skipping refresh job");
+        None
     };
 
     if let Err(e) = engram_server::server::run(state).await {
