@@ -459,7 +459,7 @@ This repo is the Rust port of the TypeScript engram. API shapes, database schema
 
 <div align="center">
 
-[engram.lol](https://engram.lol) · [Eidolon](https://github.com/Ghost-Frame/eidolon) · [Reference implementation](https://codeberg.org/GhostFrame/engram)
+[engram.lol](https://engram.lol) · [Reference implementation](https://codeberg.org/GhostFrame/engram)
 
 Elastic License 2.0
 
