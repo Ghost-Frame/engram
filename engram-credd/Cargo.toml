@@ -13,7 +13,7 @@ name = "engram-credd"
 path = "src/main.rs"
 
 [dependencies]
-engram-lib = { path = "../engram-lib" }
+engram-lib = { path = "../engram-lib", features = ["sqlcipher"] }
 engram-cred = { path = "../engram-cred" }
 
 # Web framework
