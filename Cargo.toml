@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["engram-lib", "engram-server", "engram-cli", "engram-sidecar", "engram-approval-tui", "engram-mcp", "engram-cred", "engram-credd", "agent-forge"]
+members = ["engram-lib", "engram-server", "engram-cli", "engram-sidecar", "engram-approval-tui", "engram-mcp", "engram-cred", "engram-credd", "agent-forge", "engram-migrate"]
 
 [workspace.dependencies]
 libsql = "0.6"
