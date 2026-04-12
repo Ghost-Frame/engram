@@ -37,7 +37,7 @@ The TypeScript engram remains the reference design. This is the runtime.
 ## Quick Start
 
 ```bash
-git clone https://codeberg.org/GhostFrame/engram-rust.git && cd engram-rust
+git clone https://github.com/Ghost-Frame/Engram-rust.git && cd engram-rust
 cargo build --release
 ./target/release/engram-server
 ```
@@ -459,7 +459,7 @@ This repo is the Rust port of the TypeScript engram. API shapes, database schema
 
 <div align="center">
 
-[engram.lol](https://engram.lol) · [Reference implementation](https://codeberg.org/GhostFrame/engram)
+[engram.lol](https://engram.lol) · [Reference implementation (GitHub)](https://github.com/Ghost-Frame/engram)
 
 Elastic License 2.0
 
