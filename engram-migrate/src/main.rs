@@ -8,7 +8,6 @@ use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 use tracing::info;
-use tracing_subscriber::EnvFilter;
 
 #[derive(Parser, Debug)]
 #[command(name = "engram-migrate")]
@@ -33,12 +32,8 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::from_default_env().add_directive("engram_migrate=info".parse()?),
-        )
-        .init();
+    let _otel_guard =
+        engram_lib::observability::init_tracing("engram-migrate", "engram_migrate=info");
 
     let args = Args::parse();
 

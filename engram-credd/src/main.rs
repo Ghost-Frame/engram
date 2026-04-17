@@ -7,7 +7,6 @@ use clap::Parser;
 use engram_credd::server;
 use engram_lib::config::{Config, EncryptionMode};
 use tracing::info;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser)]
 #[command(name = "engram-credd")]
@@ -28,13 +27,10 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "engram_credd=info,tower_http=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    let _otel_guard = engram_lib::observability::init_tracing(
+        "engram-credd",
+        "engram_credd=info,tower_http=debug",
+    );
 
     let args = Args::parse();
 
