@@ -101,12 +101,8 @@ pub struct SidecarState {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "engram_sidecar=debug".into()),
-        )
-        .init();
+    let _otel_guard =
+        engram_lib::observability::init_tracing("engram-sidecar", "engram_sidecar=debug");
 
     let cli = Cli::parse();
 
