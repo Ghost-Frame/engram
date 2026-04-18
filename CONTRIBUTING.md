@@ -126,6 +126,33 @@ async fn test_search_returns_recent_memories_first() {
 5. **Not running cargo check** -- Rust errors are precise; read them before asking for help
 6. **Feature-gated code** -- the `brain` module requires `brain_hopfield` feature flag
 
+## Feature Flags
+
+| Crate | Flag | Default | Purpose |
+|-------|------|---------|---------|
+| `engram-lib` | `brain_hopfield` | on | Brain module, Hopfield networks, spreading activation |
+| `engram-lib` | `sqlcipher` | off | SQLCipher at-rest encryption (required for `ENGRAM_ENCRYPTION_MODE` != `none`) |
+| `engram-lib` | `bundled-sqlite` | off | Vendor SQLite from source (needed on Windows) |
+| `engram-lib` | `tenant-sharding` | off | Per-tenant database sharding |
+| `engram-lib` | `test-utils` | off | Test helpers for downstream crates |
+| `engram-lib` | `credd-raw` | off | Raw credential access support |
+| `engram-mcp` | `http` | off | HTTP transport (default is stdio only) |
+| `engram-cred` | `gui` | off | eframe-based credential manager GUI |
+
+`sqlcipher` and `bundled-sqlite` are mutually exclusive with `libsql` in the same binary (symbol collision). This is why `engram-migrate` cannot enable `sqlcipher`.
+
+## Migration Tool
+
+`engram-migrate` is a one-shot ETL utility for migrating data from the old libsql-backed database to the current rusqlite + LanceDB backend. It reads the source database, transforms records, and writes them to the new format. Run it once during migration -- it is not part of normal operation.
+
+```bash
+cargo run -p engram-migrate -- --source old-engram.db --target /data/engram
+```
+
+The `--target` is a directory -- rusqlite database and LanceDB index are created inside it. Use `--dry-run` to preview table counts and schema diffs without writing. Use `--skip-vectors` to copy relational data only.
+
+Note: `engram-migrate` has a linker conflict between libsqlite3-sys and libsql-ffi. It must be built separately and cannot share a binary with the server.
+
 ## Questions?
 
 - Open a discussion on the repo
