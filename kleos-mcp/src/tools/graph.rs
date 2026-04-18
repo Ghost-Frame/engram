@@ -1,8 +1,8 @@
 use crate::auth::resolve_auth;
 use crate::tools::{with_auth_props, ToolDef};
 use crate::{invalid_input, App};
-use engram_lib::graph::{communities, cooccurrence, pagerank, search};
-use engram_lib::Result;
+use kleos_lib::graph::{communities, cooccurrence, pagerank, search};
+use kleos_lib::Result;
 use serde_json::{json, Value};
 
 pub fn register(out: &mut Vec<ToolDef>) {

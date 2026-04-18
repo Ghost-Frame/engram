@@ -1,10 +1,10 @@
 use crate::auth::resolve_auth;
 use crate::tools::{with_auth_props, ToolDef};
 use crate::{invalid_input, App};
-use engram_lib::memory;
-use engram_lib::memory::search::hybrid_search;
-use engram_lib::memory::types::{ListOptions, SearchRequest, StoreRequest, UpdateRequest};
-use engram_lib::Result;
+use kleos_lib::memory;
+use kleos_lib::memory::search::hybrid_search;
+use kleos_lib::memory::types::{ListOptions, SearchRequest, StoreRequest, UpdateRequest};
+use kleos_lib::Result;
 use serde_json::{json, Value};
 
 pub fn register(out: &mut Vec<ToolDef>) {
@@ -336,12 +336,12 @@ pub async fn get_by_content_hash(app: &App, args: Value) -> Result<Value> {
     let ids: Vec<i64> = app.db.read(move |conn| {
         let mut stmt = conn.prepare(
             "SELECT id FROM memories WHERE content_hash = ?1 AND user_id = ?2 AND is_forgotten = 0 ORDER BY id DESC"
-        ).map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+        ).map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
         let mut rows = stmt.query(rusqlite::params![content_hash_owned, user_id])
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
         let mut ids = Vec::new();
-        while let Some(row) = rows.next().map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))? {
-            let id: i64 = row.get(0).map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+        while let Some(row) = rows.next().map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))? {
+            let id: i64 = row.get(0).map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             ids.push(id);
         }
         Ok(ids)

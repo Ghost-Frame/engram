@@ -1,8 +1,8 @@
 use crate::auth::resolve_auth;
 use crate::tools::{with_auth_props, ToolDef};
 use crate::{invalid_input, App};
-use engram_lib::skills::{self, create_skill, evolver, search::search_skills, CreateSkillRequest};
-use engram_lib::Result;
+use kleos_lib::skills::{self, create_skill, evolver, search::search_skills, CreateSkillRequest};
+use kleos_lib::Result;
 use serde_json::{json, Value};
 
 pub fn register(out: &mut Vec<ToolDef>) {

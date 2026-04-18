@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::intelligence::{
+use kleos_lib::intelligence::{
     growth::{list_observations, materialize, reflect},
     types::{GrowthObservation, GrowthReflectRequest},
 };

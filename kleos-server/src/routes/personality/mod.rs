@@ -4,7 +4,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use engram_lib::personality::{
+use kleos_lib::personality::{
     detect_signals, get_profile, list_signals, store_signal, update_profile,
 };
 use serde_json::{json, Value};

@@ -2,7 +2,7 @@ use axum::extract::State;
 use axum::http::{Method, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
-use engram_lib::auth::{validate_key, ApiKey, AuthContext, Scope};
+use kleos_lib::auth::{validate_key, ApiKey, AuthContext, Scope};
 use tracing::Instrument;
 
 use crate::state::AppState;

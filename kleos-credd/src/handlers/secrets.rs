@@ -8,9 +8,9 @@ use axum::{
 };
 use serde_json::{json, Value};
 
-use engram_cred::audit::{log_audit, AccessTier, AuditAction};
-use engram_cred::storage::{delete_secret, get_secret, list_secrets, store_secret, update_secret};
-use engram_cred::CredError;
+use kleos_cred::audit::{log_audit, AccessTier, AuditAction};
+use kleos_cred::storage::{delete_secret, get_secret, list_secrets, store_secret, update_secret};
+use kleos_cred::CredError;
 
 use crate::auth::Auth;
 use crate::handlers::AppError;

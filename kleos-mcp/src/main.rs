@@ -11,21 +11,21 @@ struct Args {
 
 #[tokio::main]
 async fn main() {
-    engram_lib::config::migrate_env_prefix();
+    kleos_lib::config::migrate_env_prefix();
 
-    let _otel_guard = engram_lib::observability::init_tracing("engram-mcp", "engram_mcp=info");
+    let _otel_guard = kleos_lib::observability::init_tracing("engram-mcp", "kleos_mcp=info");
 
     let args = Args::parse();
-    let app = engram_mcp::App::from_env()
+    let app = kleos_mcp::App::from_env()
         .await
         .expect("failed to initialize engram-mcp");
 
     match args.transport.as_str() {
-        "stdio" => engram_mcp::transport::stdio::serve(app)
+        "stdio" => kleos_mcp::transport::stdio::serve(app)
             .await
             .expect("stdio transport failed"),
         #[cfg(feature = "http")]
-        "http" => engram_mcp::transport::http::serve(app, &args.listen)
+        "http" => kleos_mcp::transport::http::serve(app, &args.listen)
             .await
             .expect("http transport failed"),
         other => panic!("unknown transport: {other}"),

@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::services::soma::{
+use kleos_lib::services::soma::{
     add_agent_to_group, create_group, delete_agent, get_agent, get_stats as get_soma_stats,
     heartbeat, list_agent_logs, list_agents, list_groups, log_event, register_agent,
     remove_agent_from_group, set_status, RegisterAgentRequest,
@@ -56,7 +56,7 @@ async fn create_agent_handler(
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     let type_ = body
         .r#type
-        .ok_or_else(|| engram_lib::EngError::InvalidInput("type is required".into()))?;
+        .ok_or_else(|| kleos_lib::EngError::InvalidInput("type is required".into()))?;
 
     let req = RegisterAgentRequest {
         user_id: Some(auth.user_id),

@@ -11,9 +11,9 @@ pub use super::types::{
 use axum::{extract::State, Json};
 use serde_json::{json, Value};
 
-use engram_cred::audit::{log_audit, AccessTier, AuditAction};
-use engram_cred::storage::get_secret;
-use engram_cred::CredError;
+use kleos_cred::audit::{log_audit, AccessTier, AuditAction};
+use kleos_cred::storage::get_secret;
+use kleos_cred::CredError;
 
 use crate::auth::Auth;
 use crate::handlers::AppError;
@@ -159,7 +159,7 @@ pub async fn proxy_handler(
     // DNS so domains pointing at private IPs are also caught. The proxy
     // injects secret headers so an unvalidated URL would let an attacker
     // exfiltrate credentials to internal services.
-    engram_lib::webhooks::resolve_and_validate_url(&req.url)
+    kleos_lib::webhooks::resolve_and_validate_url(&req.url)
         .await
         .map_err(|e| CredError::InvalidInput(format!("proxy target URL rejected: {}", e)))?;
 

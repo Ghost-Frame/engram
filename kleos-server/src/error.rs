@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use engram_lib::EngError;
+use kleos_lib::EngError;
 use serde_json::json;
 
 pub struct AppError(pub EngError);

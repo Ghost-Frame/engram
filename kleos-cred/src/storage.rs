@@ -1,7 +1,7 @@
 //! Database storage layer for encrypted secrets.
 
-use engram_lib::db::Database;
-use engram_lib::EngError;
+use kleos_lib::db::Database;
+use kleos_lib::EngError;
 
 use crate::crypto::{decrypt_secret, encrypt_secret, KEY_SIZE, NONCE_SIZE};
 use crate::types::{SecretData, SecretType};

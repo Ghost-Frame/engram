@@ -1,17 +1,17 @@
-use engram_lib::config::{Config, EncryptionMode};
-use engram_lib::cred::CreddClient;
-use engram_lib::db::Database;
-use engram_lib::embeddings::onnx::OnnxProvider;
-use engram_lib::embeddings::EmbeddingProvider;
-use engram_lib::jobs::pagerank_refresh::start_pagerank_refresh_job;
-use engram_lib::llm::{local::LocalModelClient, OllamaConfig};
-use engram_lib::reranker::{self, Reranker};
-use engram_lib::services::brain::create_brain_backend;
-use engram_server::background::{
+use kleos_lib::config::{Config, EncryptionMode};
+use kleos_lib::cred::CreddClient;
+use kleos_lib::db::Database;
+use kleos_lib::embeddings::onnx::OnnxProvider;
+use kleos_lib::embeddings::EmbeddingProvider;
+use kleos_lib::jobs::pagerank_refresh::start_pagerank_refresh_job;
+use kleos_lib::llm::{local::LocalModelClient, OllamaConfig};
+use kleos_lib::reranker::{self, Reranker};
+use kleos_lib::services::brain::create_brain_backend;
+use kleos_server::background::{
     start_auto_backup_task, start_auto_checkpoint_task, start_job_cleanup_task,
     start_vector_sync_replay_task,
 };
-use engram_server::state::AppState;
+use kleos_server::state::AppState;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
@@ -20,38 +20,38 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[tokio::main]
 async fn main() {
-    engram_lib::config::migrate_env_prefix();
+    kleos_lib::config::migrate_env_prefix();
 
-    let _otel_guard = engram_lib::observability::init_tracing(
+    let _otel_guard = kleos_lib::observability::init_tracing(
         "engram-server",
-        "engram_server=debug,tower_http=debug",
+        "kleos_server=debug,tower_http=debug",
     );
 
     let config = Config::load();
 
     // Install Prometheus metrics recorder before any metrics are emitted.
-    engram_server::middleware::metrics::init_metrics();
+    kleos_server::middleware::metrics::init_metrics();
 
     // Resolve at-rest encryption key based on configured mode.
     let encryption_key = match config.encryption.mode {
         EncryptionMode::None => None,
         EncryptionMode::Yubikey => {
             tracing::info!("encryption mode: yubikey -- touch slot 2 to unlock database...");
-            let challenge = engram_cred::yubikey::get_or_create_challenge().unwrap_or_else(|e| {
+            let challenge = kleos_cred::yubikey::get_or_create_challenge().unwrap_or_else(|e| {
                 eprintln!("failed to load YubiKey challenge: {e}");
                 std::process::exit(1);
             });
             let response =
-                engram_cred::yubikey::challenge_response(&challenge).unwrap_or_else(|e| {
+                kleos_cred::yubikey::challenge_response(&challenge).unwrap_or_else(|e| {
                     eprintln!("YubiKey challenge-response failed: {e}");
                     std::process::exit(1);
                 });
-            Some(engram_cred::crypto::derive_key(0, b"", Some(&response)))
+            Some(kleos_cred::crypto::derive_key(0, b"", Some(&response)))
         }
         _ => {
             let mode_name = format!("{:?}", config.encryption.mode).to_ascii_lowercase();
             tracing::info!("encryption mode: {}", mode_name);
-            engram_lib::encryption::resolve_key(&config).unwrap_or_else(|e| {
+            kleos_lib::encryption::resolve_key(&config).unwrap_or_else(|e| {
                 eprintln!("encryption key resolution failed: {e}");
                 std::process::exit(1);
             })
@@ -151,10 +151,10 @@ async fn main() {
 
     // Record this startup as a potential crash/restart event, then decide
     // whether the server has been crash-looping.
-    if let Err(e) = engram_lib::admin::record_crash(&db_arc).await {
+    if let Err(e) = kleos_lib::admin::record_crash(&db_arc).await {
         tracing::warn!("failed to record startup crash timestamp: {}", e);
     }
-    let safe_mode_active = engram_lib::admin::should_enter_safe_mode(&db_arc)
+    let safe_mode_active = kleos_lib::admin::should_enter_safe_mode(&db_arc)
         .await
         .unwrap_or(false);
     if safe_mode_active {
@@ -265,7 +265,7 @@ async fn main() {
         }
     });
 
-    if let Err(e) = engram_server::server::run(state).await {
+    if let Err(e) = kleos_server::server::run(state).await {
         tracing::error!("server error: {}", e);
         std::process::exit(1);
     }

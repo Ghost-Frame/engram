@@ -6,7 +6,7 @@
 //!
 //! **YubiKey mode** is intentionally not handled here because engram-cred
 //! depends on engram-lib (circular dep). Binaries that need yubikey mode
-//! must call `engram_cred::yubikey` and `engram_cred::crypto::derive_key`
+//! must call `kleos_cred::yubikey` and `kleos_cred::crypto::derive_key`
 //! directly, then pass the resulting key to `Database::connect_encrypted`.
 
 use std::path::PathBuf;
@@ -33,8 +33,8 @@ pub fn resolve_key(config: &Config) -> Result<Option<[u8; KEY_SIZE]>> {
         EncryptionMode::Keyfile => resolve_keyfile().map(Some),
         EncryptionMode::Env => resolve_env().map(Some),
         EncryptionMode::Yubikey => Err(EngError::Encryption(
-            "yubikey mode must be resolved at the binary level via engram_cred; \
-             call engram_cred::yubikey::get_or_create_challenge(), \
+            "yubikey mode must be resolved at the binary level via kleos_cred; \
+             call kleos_cred::yubikey::get_or_create_challenge(), \
              challenge_response(), and derive_key() then pass the key to \
              Database::connect_encrypted()"
                 .into(),

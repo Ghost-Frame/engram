@@ -18,8 +18,8 @@ use tokio::fs;
 
 use crate::error::AppError;
 use crate::state::AppState;
-use engram_lib::auth::{self, Scope};
-use engram_lib::memory;
+use kleos_lib::auth::{self, Scope};
+use kleos_lib::memory;
 
 mod types;
 use types::{BulkArchiveBody, CreateMemoryBody, LoginForm, UpdateMemoryBody};
@@ -262,7 +262,7 @@ pub async fn get_gui_session(state: &AppState, headers: &HeaderMap) -> Option<Gu
     let cookie = get_auth_cookie(headers)?;
     let secret = get_hmac_secret(&state.config.data_dir).await;
     let session = verify_cookie(&cookie, &secret)?;
-    let active_key = engram_lib::auth::get_active_key_by_id(&state.db, session.key_id)
+    let active_key = kleos_lib::auth::get_active_key_by_id(&state.db, session.key_id)
         .await
         .ok()?;
     if active_key.user_id != session.user_id {
@@ -290,15 +290,15 @@ async fn require_gui_scope(
     // SECURITY: enforce safe mode on GUI write paths (GUI routes bypass the
     // normal safe_mode_middleware because they are merged outside api_routes).
     if scope == Scope::Write && state.safe_mode.load(std::sync::atomic::Ordering::Relaxed) {
-        return Err(AppError::from(engram_lib::EngError::Internal(
+        return Err(AppError::from(kleos_lib::EngError::Internal(
             "server is in safe mode; writes are temporarily disabled".into(),
         )));
     }
     let session = get_gui_session(state, headers)
         .await
-        .ok_or_else(|| AppError::from(engram_lib::EngError::Auth("GUI auth required".into())))?;
+        .ok_or_else(|| AppError::from(kleos_lib::EngError::Auth("GUI auth required".into())))?;
     if !session.has_scope(&scope) {
-        return Err(AppError::from(engram_lib::EngError::Auth(format!(
+        return Err(AppError::from(kleos_lib::EngError::Auth(format!(
             "GUI session missing required scope: {}",
             scope
         ))));
@@ -598,7 +598,7 @@ async fn gui_create_memory(
 
     let content = body.content.trim();
     if content.is_empty() {
-        return Err(AppError::from(engram_lib::EngError::InvalidInput(
+        return Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "content is required".into(),
         )));
     }

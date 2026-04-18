@@ -29,8 +29,8 @@ async fn list_inbox(
 ) -> Result<Json<Value>, AppError> {
     let limit = q.limit.unwrap_or(50).min(200);
     let offset = q.offset.unwrap_or(0);
-    let pending = engram_lib::inbox::list_pending(&state.db, auth.user_id, limit, offset).await?;
-    let total = engram_lib::inbox::count_pending(&state.db, auth.user_id).await?;
+    let pending = kleos_lib::inbox::list_pending(&state.db, auth.user_id, limit, offset).await?;
+    let total = kleos_lib::inbox::count_pending(&state.db, auth.user_id).await?;
     Ok(Json(
         json!({ "pending": pending, "count": pending.len(), "total": total, "offset": offset, "limit": limit }),
     ))
@@ -41,7 +41,7 @@ async fn approve(
     State(state): State<AppState>,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::inbox::approve_memory(&state.db, id, auth.user_id).await?;
+    kleos_lib::inbox::approve_memory(&state.db, id, auth.user_id).await?;
     Ok(Json(json!({ "approved": true, "id": id })))
 }
 
@@ -51,10 +51,10 @@ async fn reject(
     Path(id): Path<i64>,
     Json(body): Json<RejectBody>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::inbox::reject_memory(&state.db, id, auth.user_id).await?;
+    kleos_lib::inbox::reject_memory(&state.db, id, auth.user_id).await?;
     if let Some(reason) = &body.reason {
         if let Err(e) =
-            engram_lib::inbox::set_forget_reason(&state.db, id, reason, auth.user_id).await
+            kleos_lib::inbox::set_forget_reason(&state.db, id, reason, auth.user_id).await
         {
             tracing::warn!(
                 memory_id = id,
@@ -73,7 +73,7 @@ async fn edit(
     Path(id): Path<i64>,
     Json(body): Json<EditBody>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::inbox::edit_and_approve(
+    kleos_lib::inbox::edit_and_approve(
         &state.db,
         id,
         body.content.as_deref(),
@@ -95,15 +95,15 @@ async fn bulk_action(
     for id in &body.ids {
         match body.action.as_str() {
             "approve" => {
-                engram_lib::inbox::approve_memory(&state.db, *id, auth.user_id).await?;
+                kleos_lib::inbox::approve_memory(&state.db, *id, auth.user_id).await?;
                 count += 1;
             }
             "reject" => {
-                engram_lib::inbox::reject_memory(&state.db, *id, auth.user_id).await?;
+                kleos_lib::inbox::reject_memory(&state.db, *id, auth.user_id).await?;
                 count += 1;
             }
             _ => {
-                return Err(AppError(engram_lib::EngError::InvalidInput(
+                return Err(AppError(kleos_lib::EngError::InvalidInput(
                     "action must be approve or reject".into(),
                 )))
             }
@@ -121,8 +121,8 @@ async fn list_pending_legacy(
 ) -> Result<Json<Value>, AppError> {
     let limit = q.limit.unwrap_or(50).min(200);
     let offset = q.offset.unwrap_or(0);
-    let pending = engram_lib::inbox::list_pending(&state.db, auth.user_id, limit, offset).await?;
-    let total = engram_lib::inbox::count_pending(&state.db, auth.user_id).await?;
+    let pending = kleos_lib::inbox::list_pending(&state.db, auth.user_id, limit, offset).await?;
+    let total = kleos_lib::inbox::count_pending(&state.db, auth.user_id).await?;
     Ok(Json(
         json!({ "pending": pending, "count": pending.len(), "total": total, "offset": offset, "limit": limit }),
     ))

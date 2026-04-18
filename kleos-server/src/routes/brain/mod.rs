@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::services::brain::{
+use kleos_lib::services::brain::{
     get_memory_for_absorb, verify_memory_ownership, AbsorbRequest, BrainQueryOptions, DecayRequest,
     FeedbackRequest,
 };
@@ -36,7 +36,7 @@ async fn require_brain(state: &AppState) -> Result<(), AppError> {
             return Ok(());
         }
     }
-    Err(AppError(engram_lib::EngError::Internal(
+    Err(AppError(kleos_lib::EngError::Internal(
         "brain not ready".into(),
     )))
 }
@@ -47,7 +47,7 @@ async fn stats_handler(
 ) -> Result<Json<Value>, AppError> {
     require_brain(&state).await?;
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
@@ -62,13 +62,13 @@ async fn query_handler(
 ) -> Result<Json<Value>, AppError> {
     require_brain(&state).await?;
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
     let embedder_guard = state.embedder.read().await;
     let embedder = embedder_guard.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "embedder not ready (still loading)".into(),
         ))
     })?;
@@ -83,13 +83,13 @@ async fn absorb_handler(
 ) -> Result<Json<Value>, AppError> {
     require_brain(&state).await?;
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
     let embedder_guard = state.embedder.read().await;
     let embedder = embedder_guard.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "embedder not ready (still loading)".into(),
         ))
     })?;
@@ -104,7 +104,7 @@ async fn dream_handler(
 ) -> Result<Json<Value>, AppError> {
     require_brain(&state).await?;
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
@@ -122,13 +122,13 @@ async fn feedback_handler(
     // Verify memory ownership
     let owned = verify_memory_ownership(&state.db, &body.memory_ids, auth.user_id).await?;
     if !owned {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "One or more memory_ids not found or not owned by you".into(),
         )));
     }
 
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
@@ -145,7 +145,7 @@ async fn decay_handler(
 ) -> Result<Json<Value>, AppError> {
     require_brain(&state).await?;
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
@@ -162,13 +162,13 @@ async fn evolution_feedback_handler(
 
     let owned = verify_memory_ownership(&state.db, &body.memory_ids, auth.user_id).await?;
     if !owned {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "One or more memory_ids not found or not owned by you".into(),
         )));
     }
 
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
@@ -184,7 +184,7 @@ async fn evolution_train_handler(
 ) -> Result<Json<Value>, AppError> {
     require_brain(&state).await?;
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;
@@ -198,7 +198,7 @@ async fn evolution_stats_handler(
 ) -> Result<Json<Value>, AppError> {
     require_brain(&state).await?;
     let brain = state.brain.as_ref().ok_or_else(|| {
-        AppError(engram_lib::EngError::Internal(
+        AppError(kleos_lib::EngError::Internal(
             "brain not configured".into(),
         ))
     })?;

@@ -12,9 +12,9 @@ use std::time::Instant;
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::auth::{create_key, AuthContext, Scope};
-use engram_lib::cred::ProxyResponse;
-use engram_lib::graph::{communities, cooccurrence};
+use kleos_lib::auth::{create_key, AuthContext, Scope};
+use kleos_lib::cred::ProxyResponse;
+use kleos_lib::graph::{communities, cooccurrence};
 
 mod types;
 use types::{
@@ -25,7 +25,7 @@ use types::{
 
 fn require_admin(auth: &AuthContext) -> Result<(), AppError> {
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "admin scope required".into(),
         )));
     }
@@ -35,7 +35,7 @@ fn require_admin(auth: &AuthContext) -> Result<(), AppError> {
 fn to_json<T: serde::Serialize>(v: T) -> Result<Json<Value>, AppError> {
     serde_json::to_value(v)
         .map(Json)
-        .map_err(|e| AppError(engram_lib::EngError::Serialization(e)))
+        .map_err(|e| AppError(kleos_lib::EngError::Serialization(e)))
 }
 
 pub fn router() -> Router<AppState> {
@@ -119,7 +119,7 @@ async fn count_rows(state: &AppState, sql: &str) -> Result<i64, AppError> {
         .db
         .read(move |conn| {
             conn.query_row(&sql, [], |row| row.get::<_, i64>(0))
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await
         .map_err(AppError)
@@ -251,7 +251,7 @@ async fn bootstrap(
                  VALUES ('bootstrap_claimed', datetime('now'), datetime('now'))",
                 [],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await
         .map_err(AppError)?;
@@ -286,7 +286,7 @@ async fn bootstrap(
                  VALUES (1, 'operator', 'admin', 1)",
                 [],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await
         .map_err(AppError)?;
@@ -336,7 +336,7 @@ async fn get_settings(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let rows = engram_lib::admin::list_state(&state.db).await?;
+    let rows = kleos_lib::admin::list_state(&state.db).await?;
     let map: serde_json::Map<String, Value> = rows
         .into_iter()
         .map(|r| (r.key, Value::String(r.value)))
@@ -356,7 +356,7 @@ async fn put_settings(
             .as_str()
             .map(|s| s.to_string())
             .unwrap_or_else(|| val.to_string());
-        engram_lib::admin::upsert_state(&state.db, key, &v).await?;
+        kleos_lib::admin::upsert_state(&state.db, key, &v).await?;
         updated += 1;
     }
     Ok(Json(json!({ "updated": updated })))
@@ -373,7 +373,7 @@ async fn admin_gc(
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
     let uid = body.and_then(|b| b.user_id);
-    let result = engram_lib::admin::gc(&state.db, uid).await?;
+    let result = kleos_lib::admin::gc(&state.db, uid).await?;
     to_json(result)
 }
 
@@ -386,7 +386,7 @@ async fn admin_compact(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::compact(&state.db).await?;
+    let result = kleos_lib::admin::compact(&state.db).await?;
     to_json(result)
 }
 
@@ -401,7 +401,7 @@ async fn admin_reembed(
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
     let uid = body.and_then(|b| b.user_id);
-    let cleared = engram_lib::admin::reembed_all(&state.db, uid).await?;
+    let cleared = kleos_lib::admin::reembed_all(&state.db, uid).await?;
     Ok(Json(json!({ "cleared": cleared })))
 }
 
@@ -414,7 +414,7 @@ async fn admin_rebuild_fts(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let indexed = engram_lib::admin::rebuild_fts(&state.db).await?;
+    let indexed = kleos_lib::admin::rebuild_fts(&state.db).await?;
     Ok(Json(json!({ "indexed": indexed })))
 }
 
@@ -441,11 +441,11 @@ async fn backfill_facts(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let memories = engram_lib::admin::get_memories_without_facts(&state.db, 500).await?;
+    let memories = kleos_lib::admin::get_memories_without_facts(&state.db, 500).await?;
     let processed = memories.len() as i64;
     let mut facts_created = 0i32;
     for (memory_id, content, user_id) in memories {
-        if let Ok(stats) = engram_lib::intelligence::extraction::fast_extract_facts(
+        if let Ok(stats) = kleos_lib::intelligence::extraction::fast_extract_facts(
             &state.db, &content, memory_id, user_id, None,
         )
         .await
@@ -467,7 +467,7 @@ async fn admin_schema(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::get_schema(&state.db).await?;
+    let result = kleos_lib::admin::get_schema(&state.db).await?;
     to_json(result)
 }
 
@@ -496,7 +496,7 @@ async fn scale_report_handler(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::scale_report(&state.db).await?;
+    let result = kleos_lib::admin::scale_report(&state.db).await?;
     Ok(Json(result))
 }
 
@@ -510,7 +510,7 @@ async fn cold_storage_handler(
     Query(params): Query<ColdStorageParams>,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::cold_storage_stats(&state.db, params.days).await?;
+    let result = kleos_lib::admin::cold_storage_stats(&state.db, params.days).await?;
     Ok(Json(result))
 }
 
@@ -549,7 +549,7 @@ async fn admin_tasks(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let stats = engram_lib::jobs::get_job_stats(&state.db).await?;
+    let stats = kleos_lib::jobs::get_job_stats(&state.db).await?;
     to_json(stats)
 }
 
@@ -572,14 +572,14 @@ async fn admin_cred_resolve(
     }
 
     let service = body.service.as_deref().ok_or_else(|| {
-        AppError(engram_lib::EngError::InvalidInput(
+        AppError(kleos_lib::EngError::InvalidInput(
             "service is required".into(),
         ))
     })?;
     let key = body
         .key
         .as_deref()
-        .ok_or_else(|| AppError(engram_lib::EngError::InvalidInput("key is required".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::InvalidInput("key is required".into())))?;
 
     let value = if body.raw {
         state
@@ -635,7 +635,7 @@ async fn get_maintenance_handler(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::get_maintenance(&state.db).await?;
+    let result = kleos_lib::admin::get_maintenance(&state.db).await?;
     to_json(result)
 }
 
@@ -646,7 +646,7 @@ async fn post_maintenance_handler(
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
     let result =
-        engram_lib::admin::set_maintenance(&state.db, body.enabled, body.message.as_deref())
+        kleos_lib::admin::set_maintenance(&state.db, body.enabled, body.message.as_deref())
             .await?;
     to_json(result)
 }
@@ -660,7 +660,7 @@ async fn admin_sla(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::get_sla(&state.db).await?;
+    let result = kleos_lib::admin::get_sla(&state.db).await?;
     to_json(result)
 }
 
@@ -670,7 +670,7 @@ async fn admin_sla_reset(
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
     let ts = chrono::Utc::now().to_rfc3339();
-    engram_lib::admin::upsert_state(&state.db, "sla_reset_at", &ts).await?;
+    kleos_lib::admin::upsert_state(&state.db, "sla_reset_at", &ts).await?;
     Ok(Json(json!({ "status": "ok", "reset_at": ts })))
 }
 
@@ -683,7 +683,7 @@ async fn get_quotas(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let quotas = engram_lib::quota::list_quotas(&state.db).await?;
+    let quotas = kleos_lib::quota::list_quotas(&state.db).await?;
     let result: Vec<Value> = quotas
         .into_iter()
         .map(|(q, username)| {
@@ -705,10 +705,10 @@ async fn get_quotas(
 async fn put_quotas(
     State(state): State<AppState>,
     Auth(auth): Auth,
-    Json(body): Json<engram_lib::quota::TenantQuota>,
+    Json(body): Json<kleos_lib::quota::TenantQuota>,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    engram_lib::quota::upsert_quota(&state.db, &body).await?;
+    kleos_lib::quota::upsert_quota(&state.db, &body).await?;
     Ok(Json(json!({ "status": "ok", "user_id": body.user_id })))
 }
 
@@ -721,7 +721,7 @@ async fn admin_usage(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let rows = engram_lib::admin::get_usage(&state.db).await?;
+    let rows = kleos_lib::admin::get_usage(&state.db).await?;
     to_json(rows)
 }
 
@@ -730,7 +730,7 @@ async fn admin_tenants(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let rows = engram_lib::admin::get_tenants(&state.db).await?;
+    let rows = kleos_lib::admin::get_tenants(&state.db).await?;
     to_json(rows)
 }
 
@@ -744,7 +744,7 @@ async fn provision_tenant(
     Json(body): Json<ProvisionBody>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::provision_tenant(
+    let result = kleos_lib::admin::provision_tenant(
         &state.db,
         &body.username,
         body.email.as_deref(),
@@ -761,7 +761,7 @@ async fn deprovision_tenant(
     Json(body): Json<DeprovisionBody>,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let removed = engram_lib::admin::deprovision_tenant(&state.db, body.user_id).await?;
+    let removed = kleos_lib::admin::deprovision_tenant(&state.db, body.user_id).await?;
     Ok(Json(json!({ "removed": removed, "user_id": body.user_id })))
 }
 
@@ -774,7 +774,7 @@ async fn checkpoint_handler(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::checkpoint(&state.db).await?;
+    let result = kleos_lib::admin::checkpoint(&state.db).await?;
     Ok(Json(result))
 }
 
@@ -783,7 +783,7 @@ async fn backup_verify_handler(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let result = engram_lib::admin::verify_backup(&state.db).await?;
+    let result = kleos_lib::admin::verify_backup(&state.db).await?;
     to_json(result)
 }
 
@@ -809,7 +809,7 @@ async fn backup_handler(
     // SQLite's VACUUM INTO requires a string literal; embedding the UUID
     // filename keeps the statement immune to user-controlled input.
     if tmp.contains('\'') {
-        return Err(AppError(engram_lib::EngError::Internal(
+        return Err(AppError(kleos_lib::EngError::Internal(
             "backup path contains a single quote".into(),
         )));
     }
@@ -818,13 +818,13 @@ async fn backup_handler(
         .db
         .write(move |conn| {
             conn.execute(&vacuum_sql, [])
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await
         .map_err(AppError)?;
     let bytes = tokio::fs::read(&tmp)
         .await
-        .map_err(|e| AppError(engram_lib::EngError::Internal(e.to_string())))?;
+        .map_err(|e| AppError(kleos_lib::EngError::Internal(e.to_string())))?;
     if let Err(e) = tokio::fs::remove_file(&tmp).await {
         tracing::warn!(path = %tmp, error = %e, "failed to remove temporary backup file");
     }
@@ -851,7 +851,7 @@ async fn admin_pitr_snapshots(
     require_admin(&auth)?;
     let dir =
         crate::background::resolve_backup_dir(&state.config.data_dir, &state.config.backup_dir);
-    let snapshots = engram_lib::db::pitr::list_snapshots(&dir);
+    let snapshots = kleos_lib::db::pitr::list_snapshots(&dir);
     Ok(Json(json!({ "snapshots": snapshots })))
 }
 
@@ -863,7 +863,7 @@ async fn admin_pitr_prepare(
     require_admin(&auth)?;
     let target = chrono::DateTime::parse_from_rfc3339(&body.target)
         .map_err(|e| {
-            AppError(engram_lib::EngError::InvalidInput(format!(
+            AppError(kleos_lib::EngError::InvalidInput(format!(
                 "target must be RFC3339: {e}"
             )))
         })?
@@ -871,7 +871,7 @@ async fn admin_pitr_prepare(
     let dir =
         crate::background::resolve_backup_dir(&state.config.data_dir, &state.config.backup_dir);
     let dest = std::path::PathBuf::from(&body.dest_path);
-    let prepared = engram_lib::db::pitr::prepare_restore(&dir, target, &dest).await?;
+    let prepared = kleos_lib::db::pitr::prepare_restore(&dir, target, &dest).await?;
     Ok(Json(json!(prepared)))
 }
 
@@ -886,7 +886,7 @@ async fn export_handler(
     // SECURITY (SEC-MED-1): gate admin-path export behind admin scope.
     // User-facing export lives in the portability module.
     require_admin(&auth)?;
-    let result = engram_lib::admin::export_user_data(&state.db, auth.user_id).await?;
+    let result = kleos_lib::admin::export_user_data(&state.db, auth.user_id).await?;
     to_json(result)
 }
 
@@ -915,7 +915,7 @@ async fn reset_user(
             .db
             .write(move |conn| {
                 conn.execute(&sql_owned, params![uid])
-                    .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+                    .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
             })
             .await
             .map_err(AppError)? as i64;
@@ -956,7 +956,7 @@ async fn admin_vector_sync_replay(
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
     let limit = body.and_then(|Json(b)| b.limit).unwrap_or(200).min(5000);
-    let report = engram_lib::memory::replay_vector_sync_pending(&state.db, limit).await?;
+    let report = kleos_lib::memory::replay_vector_sync_pending(&state.db, limit).await?;
     to_json(report)
 }
 
@@ -985,7 +985,7 @@ async fn admin_vector_rebuild_index(
     Ok(Json(json!({
         "rebuilt": rebuilt,
         "row_count": row_count,
-        "min_rows_for_index": engram_lib::vector::lance::MIN_ROWS_FOR_INDEX,
+        "min_rows_for_index": kleos_lib::vector::lance::MIN_ROWS_FOR_INDEX,
     })))
 }
 
@@ -998,7 +998,7 @@ async fn post_safe_mode_exit(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    engram_lib::admin::clear_crash_window(&state.db).await?;
+    kleos_lib::admin::clear_crash_window(&state.db).await?;
     state.safe_mode.store(false, Ordering::Relaxed);
     tracing::info!(user_id = auth.user_id, "safe mode exited");
     Ok(Json(json!({ "safe_mode": false })))
@@ -1013,9 +1013,9 @@ async fn admin_pagerank_rebuild(
     match params.user_id {
         Some(uid) => {
             let scores =
-                engram_lib::graph::pagerank::compute_pagerank_for_user(&state.db, uid).await?;
+                kleos_lib::graph::pagerank::compute_pagerank_for_user(&state.db, uid).await?;
             let count = scores.len();
-            engram_lib::graph::pagerank::persist_pagerank(&state.db, uid, &scores).await?;
+            kleos_lib::graph::pagerank::persist_pagerank(&state.db, uid, &scores).await?;
             Ok(Json(json!({
                 "success": true,
                 "users_updated": 1,
@@ -1023,7 +1023,7 @@ async fn admin_pagerank_rebuild(
             })))
         }
         None => {
-            let users_updated = engram_lib::graph::pagerank::rebuild_all_users(&state.db).await?;
+            let users_updated = kleos_lib::graph::pagerank::rebuild_all_users(&state.db).await?;
             Ok(Json(json!({
                 "success": true,
                 "users_updated": users_updated,
@@ -1042,7 +1042,7 @@ async fn admin_migration_status(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
-    let status = engram_lib::db::migrations::migration_status(&state.db).await?;
+    let status = kleos_lib::db::migrations::migration_status(&state.db).await?;
     to_json(status)
 }
 
@@ -1055,7 +1055,7 @@ async fn admin_migrate_down(
 ) -> Result<Json<Value>, AppError> {
     require_admin(&auth)?;
     let plan =
-        engram_lib::db::migrations::migrate_down(&state.db, body.target_version, body.dry_run)
+        kleos_lib::db::migrations::migrate_down(&state.db, body.target_version, body.dry_run)
             .await?;
     to_json(plan)
 }

@@ -1,6 +1,6 @@
 //! Background tasks that run on a timer for the duration of the server process.
 
-use engram_lib::db::Database;
+use kleos_lib::db::Database;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -23,9 +23,9 @@ pub fn start_auto_checkpoint_task(
 
     let handle = tokio::spawn(async move {
         // Startup TRUNCATE: flush any WAL accumulated before this process started.
-        match engram_lib::db::backup::wal_checkpoint(
+        match kleos_lib::db::backup::wal_checkpoint(
             &db,
-            engram_lib::db::backup::CheckpointMode::Truncate,
+            kleos_lib::db::backup::CheckpointMode::Truncate,
         )
         .await
         {
@@ -41,9 +41,9 @@ pub fn start_auto_checkpoint_task(
                     break;
                 }
                 _ = tokio::time::sleep(interval) => {
-                    match engram_lib::db::backup::wal_checkpoint(
+                    match kleos_lib::db::backup::wal_checkpoint(
                         &db,
-                        engram_lib::db::backup::CheckpointMode::Passive,
+                        kleos_lib::db::backup::CheckpointMode::Passive,
                     )
                     .await
                     {
@@ -85,7 +85,7 @@ pub fn start_job_cleanup_task(
                     break;
                 }
                 _ = tokio::time::sleep(sleep_dur) => {
-                    match engram_lib::jobs::cleanup_completed_jobs(&db).await {
+                    match kleos_lib::jobs::cleanup_completed_jobs(&db).await {
                         Ok(n) => {
                             info!(deleted = n, "job cleanup complete");
                             consecutive_failures = 0;
@@ -104,7 +104,7 @@ pub fn start_job_cleanup_task(
                     // unbounded table growth from spoofed pre-auth keys.
                     // Grace period of 300s (5 min) keeps rows for a bit
                     // after window expiry to avoid edge-case resets.
-                    match engram_lib::ratelimit::cleanup_expired_rows(&db, 300).await {
+                    match kleos_lib::ratelimit::cleanup_expired_rows(&db, 300).await {
                         Ok(n) if n > 0 => info!(deleted = n, "rate-limit row cleanup"),
                         Ok(_) => {}
                         Err(e) => warn!(error = %e, "rate-limit row cleanup failed"),
@@ -151,7 +151,7 @@ pub fn start_vector_sync_replay_task(
                 }
                 _ = tokio::time::sleep(sleep_dur) => {
                     // Discover which users have pending work this tick.
-                    let user_ids = match engram_lib::memory::vector_sync_pending_users(&db).await {
+                    let user_ids = match kleos_lib::memory::vector_sync_pending_users(&db).await {
                         Ok(ids) => ids,
                         Err(e) => {
                             consecutive_failures += 1;
@@ -171,7 +171,7 @@ pub fn start_vector_sync_replay_task(
                         .min_by_key(|uid| last_served.get(uid).copied().unwrap_or(0))
                         .expect("non-empty vec has a minimum");
 
-                    match engram_lib::memory::replay_vector_sync_pending_for_user(
+                    match kleos_lib::memory::replay_vector_sync_pending_for_user(
                         &db,
                         next_user,
                         100,
@@ -346,7 +346,7 @@ pub fn start_auto_backup_task(
                 _ = tokio::time::sleep(sleep_dur) => {
                     let now = chrono::Utc::now();
                     let dest = dir.join(backup_filename(now));
-                    match engram_lib::db::backup::vacuum_into(&db, &dest).await {
+                    match kleos_lib::db::backup::vacuum_into(&db, &dest).await {
                         Ok(()) => {
                             match verify_backup(&dest).await {
                                 Ok(report) => {
@@ -396,14 +396,14 @@ pub fn start_auto_backup_task(
 
 /// Run integrity_check + restore_test on a freshly-written backup.
 /// Returns the restore report on success, or a descriptive error string.
-async fn verify_backup(dest: &Path) -> Result<engram_lib::db::backup::RestoreReport, String> {
-    let errors = engram_lib::db::backup::integrity_check(dest)
+async fn verify_backup(dest: &Path) -> Result<kleos_lib::db::backup::RestoreReport, String> {
+    let errors = kleos_lib::db::backup::integrity_check(dest)
         .await
         .map_err(|e| format!("integrity_check errored: {e}"))?;
     if !errors.is_empty() {
         return Err(format!("integrity_check reported issues: {errors:?}"));
     }
-    engram_lib::db::backup::restore_test(dest)
+    kleos_lib::db::backup::restore_test(dest)
         .await
         .map_err(|e| format!("restore_test failed: {e}"))
 }

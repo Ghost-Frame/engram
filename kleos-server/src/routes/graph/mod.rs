@@ -4,8 +4,8 @@ use axum::{
     routing::{get, post, put},
     Json, Router,
 };
-use engram_lib::facts::list_facts;
-use engram_lib::graph::{
+use kleos_lib::facts::list_facts;
+use kleos_lib::graph::{
     builder::build_graph_data,
     communities::{detect_communities, get_community_members, get_community_stats},
     cooccurrence::{get_cooccurring_entities, rebuild_cooccurrences},
@@ -17,7 +17,7 @@ use engram_lib::graph::{
     search::{graph_search, neighborhood_filtered},
     types::{CreateEntityRequest, CreateRelationshipRequest, GraphBuildOptions},
 };
-use engram_lib::validation::{
+use kleos_lib::validation::{
     MAX_ENTITY_RELATIONSHIPS, MAX_GRAPH_BUILD_NODES, MAX_GRAPH_NEIGHBORHOOD_DEPTH,
     MAX_MEMORY_ENTITY_FANOUT,
 };
@@ -127,7 +127,7 @@ async fn create_entity_handler(
                 params![name, entity_type, description, aliases_json, user_id, space_id],
                 row_to_entity_json,
             )
-            .map_err(engram_lib::EngError::Database)
+            .map_err(kleos_lib::EngError::Database)
         })
         .await?;
 
@@ -158,14 +158,14 @@ async fn list_entities_handler(
                      ORDER BY occurrence_count DESC \
                      LIMIT ?2 OFFSET ?3",
                 )
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
 
             let rows = stmt
                 .query_map(params![user_id, limit, offset], row_to_entity_json)
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
 
             rows.collect::<Result<Vec<_>, _>>()
-                .map_err(engram_lib::EngError::Database)
+                .map_err(kleos_lib::EngError::Database)
         })
         .await?;
 
@@ -194,13 +194,13 @@ async fn get_entity_handler(
                 row_to_entity_json,
             )
             .optional()
-            .map_err(engram_lib::EngError::Database)
+            .map_err(kleos_lib::EngError::Database)
         })
         .await?;
 
     match entity {
         Some(e) => Ok(Json(e)),
-        None => Err(AppError(engram_lib::EngError::NotFound(format!(
+        None => Err(AppError(kleos_lib::EngError::NotFound(format!(
             "entity {} not found",
             id
         )))),
@@ -254,7 +254,7 @@ async fn delete_entity_handler(
                 "DELETE FROM entities WHERE id = ?1 AND user_id = ?2",
                 params![id, user_id],
             )
-            .map_err(engram_lib::EngError::Database)?;
+            .map_err(kleos_lib::EngError::Database)?;
             Ok(())
         })
         .await?;
@@ -291,17 +291,17 @@ async fn entity_relationships_handler(
                          ORDER BY er.strength DESC, er.id DESC \
                          LIMIT ?4",
                     )
-                    .map_err(engram_lib::EngError::Database)?;
+                    .map_err(kleos_lib::EngError::Database)?;
 
                 let rows = stmt
                     .query_map(
                         params![id, user_id, relationship_type, MAX_ENTITY_RELATIONSHIPS as i64],
                         row_to_relationship_json,
                     )
-                    .map_err(engram_lib::EngError::Database)?;
+                    .map_err(kleos_lib::EngError::Database)?;
 
                 rows.collect::<Result<Vec<_>, _>>()
-                    .map_err(engram_lib::EngError::Database)
+                    .map_err(kleos_lib::EngError::Database)
             } else {
                 let mut stmt = conn
                     .prepare(
@@ -313,17 +313,17 @@ async fn entity_relationships_handler(
                          ORDER BY er.strength DESC, er.id DESC \
                          LIMIT ?3",
                     )
-                    .map_err(engram_lib::EngError::Database)?;
+                    .map_err(kleos_lib::EngError::Database)?;
 
                 let rows = stmt
                     .query_map(
                         params![id, user_id, MAX_ENTITY_RELATIONSHIPS as i64],
                         row_to_relationship_json,
                     )
-                    .map_err(engram_lib::EngError::Database)?;
+                    .map_err(kleos_lib::EngError::Database)?;
 
                 rows.collect::<Result<Vec<_>, _>>()
-                    .map_err(engram_lib::EngError::Database)
+                    .map_err(kleos_lib::EngError::Database)
             }
         })
         .await?;
@@ -379,14 +379,14 @@ async fn entity_memories_handler(
                      JOIN entities e ON e.id = me.entity_id \
                      WHERE me.entity_id = ?1 AND e.user_id = ?2",
                 )
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
 
             let rows = stmt
                 .query_map(params![id, user_id], |row| row.get::<_, i64>(0))
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
 
             rows.collect::<Result<Vec<_>, _>>()
-                .map_err(engram_lib::EngError::Database)
+                .map_err(kleos_lib::EngError::Database)
         })
         .await?;
 
@@ -476,12 +476,12 @@ async fn create_relationship_handler(
                 params![source_id, target_id, user_id],
                 |row| row.get(0),
             )
-            .map_err(engram_lib::EngError::Database)
+            .map_err(kleos_lib::EngError::Database)
         })
         .await?;
 
     if count < 2 {
-        return Err(AppError(engram_lib::EngError::NotFound(
+        return Err(AppError(kleos_lib::EngError::NotFound(
             "one or both entities not found".into(),
         )));
     }
@@ -507,7 +507,7 @@ async fn create_relationship_handler(
                 params![source_id, target_id, rel_type, strength],
                 row_to_relationship_json,
             )
-            .map_err(engram_lib::EngError::Database)
+            .map_err(kleos_lib::EngError::Database)
         })
         .await?;
 
@@ -595,7 +595,7 @@ async fn build_graph_handler(
     // force the server to materialize an arbitrarily large graph.
     opts.limit = Some(match opts.limit {
         Some(0) => {
-            return Err(AppError::from(engram_lib::EngError::InvalidInput(
+            return Err(AppError::from(kleos_lib::EngError::InvalidInput(
                 "limit must be >= 1".into(),
             )))
         }
@@ -677,7 +677,7 @@ async fn memory_entities_handler(
                      ORDER BY me.salience DESC \
                      LIMIT ?3",
                 )
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
 
             let rows = stmt
                 .query_map(params![id, user_id, MAX_MEMORY_ENTITY_FANOUT], |row| {
@@ -692,10 +692,10 @@ async fn memory_entities_handler(
                         "salience": salience,
                     }))
                 })
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
 
             rows.collect::<Result<Vec<_>, _>>()
-                .map_err(engram_lib::EngError::Database)
+                .map_err(kleos_lib::EngError::Database)
         })
         .await?;
 
@@ -724,7 +724,7 @@ async fn communities_handler(
                        AND is_forgotten = 0 AND is_archived = 0 AND is_latest = 1 \
                      ORDER BY community_id, importance DESC",
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let rows = stmt
                 .query_map(rusqlite::params![user_id], |row| {
@@ -732,13 +732,13 @@ async fn communities_handler(
                     let mid: i64 = row.get(1)?;
                     Ok((cid, mid))
                 })
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let mut comm_map: std::collections::BTreeMap<i64, Vec<i64>> =
                 std::collections::BTreeMap::new();
             for row in rows {
                 let (cid, mid) =
-                    row.map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                    row.map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
                 comm_map.entry(cid).or_default().push(mid);
             }
 

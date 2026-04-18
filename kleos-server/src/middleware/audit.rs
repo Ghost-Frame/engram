@@ -3,7 +3,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use engram_lib::auth::AuthContext;
+use kleos_lib::auth::AuthContext;
 
 use crate::state::AppState;
 
@@ -42,7 +42,7 @@ pub async fn audit_middleware(
         let action = format!("http.{}", method.to_lowercase());
         let details = format!("path={} status={}", path, status);
 
-        if let Err(e) = engram_lib::audit::log_request(
+        if let Err(e) = kleos_lib::audit::log_request(
             &db,
             user_id,
             agent_id,

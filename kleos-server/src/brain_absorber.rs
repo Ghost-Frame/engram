@@ -7,8 +7,8 @@ use chrono::Utc;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use engram_lib::embeddings::EmbeddingProvider;
-use engram_lib::services::brain::{AbsorbMemoryData, BrainBackend};
+use kleos_lib::embeddings::EmbeddingProvider;
+use kleos_lib::services::brain::{AbsorbMemoryData, BrainBackend};
 
 /// Absorb a single activity event into the brain.
 ///

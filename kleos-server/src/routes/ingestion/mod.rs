@@ -11,7 +11,7 @@ use axum::{
     Json, Router,
 };
 use base64::Engine as _;
-use engram_lib::ingestion::{
+use kleos_lib::ingestion::{
     self,
     types::{FormatMeta, IngestMode, IngestOptions, IngestProgressEvent, SupportedFormat},
 };
@@ -25,7 +25,7 @@ use uuid::Uuid;
 use rusqlite::{params, OptionalExtension};
 
 use crate::{error::AppError, extractors::Auth, state::AppState};
-use engram_lib::validation::{
+use kleos_lib::validation::{
     MAX_IMPORT_BATCH, MAX_INGEST_TEXT_BYTES, MAX_UPLOAD_CHUNK_BYTES, MAX_UPLOAD_TOTAL_BYTES,
 };
 use types::{
@@ -89,7 +89,7 @@ async fn upload_init(
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     if let Some(size) = body.total_size {
         if !(0..=MAX_UPLOAD_TOTAL_BYTES).contains(&size) {
-            return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                 "total_size must be between 0 and {} bytes",
                 MAX_UPLOAD_TOTAL_BYTES
             ))));
@@ -131,7 +131,7 @@ async fn upload_init(
                     expires_at_db
                 ],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         })
         .await?;
@@ -152,7 +152,7 @@ async fn upload_init(
 async fn load_session(
     state: &AppState,
     upload_id: &str,
-) -> Result<UploadSession, engram_lib::EngError> {
+) -> Result<UploadSession, kleos_lib::EngError> {
     let id = upload_id.to_string();
     let row: Option<UploadSession> = state
         .db
@@ -176,20 +176,20 @@ async fn load_session(
                 },
             )
             .optional()
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
-    row.ok_or_else(|| engram_lib::EngError::NotFound("upload session not found".into()))
+    row.ok_or_else(|| kleos_lib::EngError::NotFound("upload session not found".into()))
 }
 
 fn ensure_session_owner(session: &UploadSession, user_id: i64) -> Result<(), AppError> {
     if session.user_id != user_id {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "upload belongs to another user".into(),
         )));
     }
     if session.status != "active" {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "upload is {}",
             session.status
         ))));
@@ -198,7 +198,7 @@ fn ensure_session_owner(session: &UploadSession, user_id: i64) -> Result<(), App
         .map(|dt| dt.and_utc())
         .unwrap_or_else(|_| chrono::Utc::now() + chrono::Duration::hours(1));
     if chrono::Utc::now() > expires {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "upload session expired".into(),
         )));
     }
@@ -211,7 +211,7 @@ async fn upload_chunk(
     Json(body): Json<UploadChunkBody>,
 ) -> Result<Json<Value>, AppError> {
     if body.chunk_index < 0 {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "chunk_index must be >= 0".into(),
         )));
     }
@@ -221,21 +221,21 @@ async fn upload_chunk(
 
     let raw = base64::engine::general_purpose::STANDARD
         .decode(body.data.as_bytes())
-        .map_err(|_| AppError(engram_lib::EngError::InvalidInput("invalid base64".into())))?;
+        .map_err(|_| AppError(kleos_lib::EngError::InvalidInput("invalid base64".into())))?;
     if raw.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "chunk data is empty".into(),
         )));
     }
     if raw.len() > MAX_UPLOAD_CHUNK_BYTES {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "chunk exceeds {} bytes",
             MAX_UPLOAD_CHUNK_BYTES
         ))));
     }
     let computed = sha256_hex(&raw);
     if computed != body.chunk_hash.to_ascii_lowercase() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "chunk_hash mismatch".into(),
         )));
     }
@@ -261,7 +261,7 @@ async fn upload_chunk(
                     |row| row.get(0),
                 )
                 .optional()
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let projected_total: i64 = conn
                 .query_row(
@@ -269,10 +269,10 @@ async fn upload_chunk(
                     params![upload_id],
                     |row| row.get(0),
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let adjusted = projected_total - existing_size.unwrap_or(0) + size;
             if adjusted > MAX_UPLOAD_TOTAL_BYTES {
-                return Err(engram_lib::EngError::InvalidInput(format!(
+                return Err(kleos_lib::EngError::InvalidInput(format!(
                     "upload would exceed {} byte limit",
                     MAX_UPLOAD_TOTAL_BYTES
                 )));
@@ -288,7 +288,7 @@ async fn upload_chunk(
                      created_at = datetime('now')",
                 params![upload_id, chunk_index, chunk_hash, size, raw_for_db],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let (count, bytes): (i64, i64) = conn
                 .query_row(
@@ -296,7 +296,7 @@ async fn upload_chunk(
                     params![upload_id],
                     |row| Ok((row.get(0)?, row.get(1)?)),
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok((count, bytes))
         })
         .await?;
@@ -328,7 +328,7 @@ async fn upload_complete(
                     "SELECT chunk_index, chunk_hash, data FROM upload_chunks
                        WHERE upload_id = ?1 ORDER BY chunk_index ASC",
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let rows = stmt
                 .query_map(params![upload_id], |row| {
                     Ok((
@@ -337,17 +337,17 @@ async fn upload_complete(
                         row.get::<_, Vec<u8>>(2)?,
                     ))
                 })
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let mut out = Vec::new();
             for row in rows {
-                out.push(row.map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?);
+                out.push(row.map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?);
             }
             Ok(out)
         })
         .await?;
 
     if chunks.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "no chunks uploaded".into(),
         )));
     }
@@ -356,7 +356,7 @@ async fn upload_complete(
     // silently dropped and we refuse to assemble a corrupt body.
     for (expected, actual) in chunks.iter().enumerate() {
         if expected as i64 != actual.0 {
-            return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                 "missing chunk at index {} (next present: {})",
                 expected, actual.0
             ))));
@@ -365,7 +365,7 @@ async fn upload_complete(
     let total = chunks.len() as i64;
     if let Some(expected) = body.total_chunks.or(session.total_chunks) {
         if expected != total {
-            return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                 "expected {} chunks, have {}",
                 expected, total
             ))));
@@ -380,7 +380,7 @@ async fn upload_complete(
     }
 
     if assembled.len() as i64 > MAX_UPLOAD_TOTAL_BYTES {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "assembled payload exceeds {} bytes",
             MAX_UPLOAD_TOTAL_BYTES
         ))));
@@ -389,7 +389,7 @@ async fn upload_complete(
     let final_hash = sha256_hex(&assembled);
     if let Some(ref expected) = body.final_sha256 {
         if expected.to_ascii_lowercase() != final_hash {
-            return Err(AppError(engram_lib::EngError::InvalidInput(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(
                 "final_sha256 mismatch -- payload corrupted".into(),
             )));
         }
@@ -399,17 +399,17 @@ async fn upload_complete(
     // formats can land here once ingestion grows binary-format support; for
     // now we reject non-UTF-8 cleanly rather than silently lossy-decoding.
     let text = String::from_utf8(assembled).map_err(|_| {
-        AppError(engram_lib::EngError::InvalidInput(
+        AppError(kleos_lib::EngError::InvalidInput(
             "assembled payload is not valid UTF-8 -- binary ingest not yet supported".into(),
         ))
     })?;
     if text.trim().is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "assembled payload is empty".into(),
         )));
     }
     if text.len() > MAX_INGEST_TEXT_BYTES {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "assembled text exceeds {} bytes; decompose before upload",
             MAX_INGEST_TEXT_BYTES
         ))));
@@ -464,12 +464,12 @@ async fn upload_complete(
                    WHERE upload_id = ?2",
                 params![final_hash_db, upload_id_db],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             conn.execute(
                 "DELETE FROM upload_chunks WHERE upload_id = ?1",
                 params![upload_id_db],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         })
         .await?;
@@ -494,7 +494,7 @@ async fn upload_abort(
 ) -> Result<Json<Value>, AppError> {
     let session = load_session(&state, &body.upload_id).await?;
     if session.user_id != auth.user_id {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "upload belongs to another user".into(),
         )));
     }
@@ -507,12 +507,12 @@ async fn upload_abort(
                    completed_at = datetime('now') WHERE upload_id = ?1",
                 params![upload_id],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             conn.execute(
                 "DELETE FROM upload_chunks WHERE upload_id = ?1",
                 params![upload_id],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         })
         .await?;
@@ -530,7 +530,7 @@ async fn upload_status(
 ) -> Result<Json<Value>, AppError> {
     let session = load_session(&state, &upload_id).await?;
     if session.user_id != auth.user_id {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "upload belongs to another user".into(),
         )));
     }
@@ -544,15 +544,15 @@ async fn upload_status(
                     params![id],
                     |row| Ok((row.get(0)?, row.get(1)?)),
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let mut stmt = conn
                 .prepare(
                     "SELECT chunk_index FROM upload_chunks WHERE upload_id = ?1 ORDER BY chunk_index",
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let indices: Vec<i64> = stmt
                 .query_map(params![id], |row| row.get::<_, i64>(0))
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?
                 .filter_map(|r| r.ok())
                 .collect();
             Ok((count, bytes, indices))
@@ -580,25 +580,25 @@ async fn import_bulk(
     Json(body): Json<ImportBulkBody>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     if body.text.is_none() && body.url.is_none() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "Provide text or url parameter".to_string(),
         )));
     }
     let input = if let Some(ref text) = body.text {
         if text.trim().is_empty() {
-            return Err(AppError(engram_lib::EngError::InvalidInput(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(
                 "text must be a non-empty string".to_string(),
             )));
         }
         if text.len() > MAX_INGEST_TEXT_BYTES {
-            return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                 "text exceeds {} bytes; split the import",
                 MAX_INGEST_TEXT_BYTES
             ))));
         }
         text.clone()
     } else {
-        return Err(AppError(engram_lib::EngError::NotImplemented(
+        return Err(AppError(kleos_lib::EngError::NotImplemented(
             "URL fetching not yet implemented".to_string(),
         )));
     };
@@ -648,18 +648,18 @@ async fn import_json(
     Json(body): Json<ImportJsonBody>,
 ) -> Result<Json<Value>, AppError> {
     if body.version.is_none() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "Invalid export format: missing version field".to_string(),
         )));
     }
     let memories = body.memories.unwrap_or_default();
     if memories.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "Invalid export format: missing memories array".to_string(),
         )));
     }
     if memories.len() > MAX_IMPORT_BATCH {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "import batch exceeds {} memories; split into smaller requests",
             MAX_IMPORT_BATCH
         ))));
@@ -700,7 +700,7 @@ async fn import_json(
             conn.execute(
                 "INSERT INTO memories (content, category, source, session_id, importance, tags, confidence, is_static, user_id, sync_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
                 params![content, category, source, session_id, importance, tags_str, confidence, is_static, user_id, sync_id, created_at, updated_at],
-            ).map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            ).map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         }).await {
             Ok(()) => imported += 1,
@@ -723,12 +723,12 @@ async fn import_mem0(
         .cloned()
         .unwrap_or(body.clone());
     let arr = memories.as_array().ok_or_else(|| {
-        AppError(engram_lib::EngError::InvalidInput(
+        AppError(kleos_lib::EngError::InvalidInput(
             "Expected array of mem0 memories".to_string(),
         ))
     })?;
     if arr.len() > MAX_IMPORT_BATCH {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "import batch exceeds {} memories; split into smaller requests",
             MAX_IMPORT_BATCH
         ))));
@@ -772,7 +772,7 @@ async fn import_mem0(
             conn.execute(
                 "INSERT INTO memories (content, category, source, importance, tags, confidence, user_id, sync_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, 1.0, ?6, ?7, datetime('now'), datetime('now'))",
                 params![content, category_s, source_s, importance, tags_str, user_id, sync_id],
-            ).map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            ).map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         }).await.is_ok() {
             imported += 1;
@@ -799,17 +799,17 @@ async fn import_supermemory(
             }
         })
         .ok_or_else(|| {
-            AppError(engram_lib::EngError::InvalidInput(
+            AppError(kleos_lib::EngError::InvalidInput(
                 "Expected documents/memories array".to_string(),
             ))
         })?;
     let arr = items.as_array().ok_or_else(|| {
-        AppError(engram_lib::EngError::InvalidInput(
+        AppError(kleos_lib::EngError::InvalidInput(
             "Expected array".to_string(),
         ))
     })?;
     if arr.len() > MAX_IMPORT_BATCH {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "import batch exceeds {} memories; split into smaller requests",
             MAX_IMPORT_BATCH
         ))));
@@ -889,7 +889,7 @@ async fn import_supermemory(
             conn.execute(
                 "INSERT INTO memories (content, category, source, importance, tags, confidence, user_id, sync_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, 1.0, ?6, ?7, datetime('now'), datetime('now'))",
                 params![content, category_s, source_s, importance, tags_str, user_id, sync_id],
-            ).map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            ).map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         }).await {
             Ok(()) => imported += 1,
@@ -907,7 +907,7 @@ async fn ingest_text(
     Json(body): Json<IngestBody>,
 ) -> Result<Json<Value>, AppError> {
     if body.url.is_none() && body.text.is_none() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "Provide url or text parameter".to_string(),
         )));
     }
@@ -916,12 +916,12 @@ async fn ingest_text(
     let title;
     if let Some(ref text) = body.text {
         if text.trim().is_empty() {
-            return Err(AppError(engram_lib::EngError::InvalidInput(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(
                 "text must be a non-empty string".to_string(),
             )));
         }
         if text.len() > MAX_INGEST_TEXT_BYTES {
-            return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                 "text exceeds {} bytes; split the ingest",
                 MAX_INGEST_TEXT_BYTES
             ))));
@@ -933,7 +933,7 @@ async fn ingest_text(
         });
         ingest_source = body.source.unwrap_or_else(|| "text".to_string());
     } else {
-        return Err(AppError(engram_lib::EngError::Internal(
+        return Err(AppError(kleos_lib::EngError::Internal(
             "URL fetching not yet implemented in Rust port".to_string(),
         )));
     }
@@ -968,14 +968,14 @@ async fn ingest_text_stream(
     Json(body): Json<IngestBody>,
 ) -> Result<impl IntoResponse, AppError> {
     if body.url.is_none() && body.text.is_none() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "Provide url or text parameter".to_string(),
         )));
     }
     let raw_text = match body.text.as_ref() {
         Some(text) if !text.trim().is_empty() => {
             if text.len() > MAX_INGEST_TEXT_BYTES {
-                return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+                return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                     "text exceeds {} bytes; split the ingest",
                     MAX_INGEST_TEXT_BYTES
                 ))));
@@ -983,12 +983,12 @@ async fn ingest_text_stream(
             text.trim().to_string()
         }
         Some(_) => {
-            return Err(AppError(engram_lib::EngError::InvalidInput(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(
                 "text must be a non-empty string".to_string(),
             )));
         }
         None => {
-            return Err(AppError(engram_lib::EngError::Internal(
+            return Err(AppError(kleos_lib::EngError::Internal(
                 "URL fetching not yet implemented in Rust port".to_string(),
             )));
         }
@@ -1084,7 +1084,7 @@ async fn add_conversation(
     Auth(_auth): Auth,
     Json(_body): Json<Value>,
 ) -> Result<Json<Value>, AppError> {
-    Err(AppError(engram_lib::EngError::NotImplemented(
+    Err(AppError(kleos_lib::EngError::NotImplemented(
         "/add requires LLM-based fact extraction (not yet implemented)".to_string(),
     )))
 }
@@ -1094,7 +1094,7 @@ async fn derive(
     Auth(_auth): Auth,
     Json(_body): Json<Value>,
 ) -> Result<Json<Value>, AppError> {
-    Err(AppError(engram_lib::EngError::NotImplemented(
+    Err(AppError(kleos_lib::EngError::NotImplemented(
         "/derive requires LLM-based inference (not yet implemented)".to_string(),
     )))
 }

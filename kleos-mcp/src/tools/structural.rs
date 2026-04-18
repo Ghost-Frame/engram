@@ -1,13 +1,13 @@
 use crate::auth::resolve_auth;
 use crate::tools::{with_auth_props, ToolDef};
 use crate::{invalid_input, App};
-use engram_lib::graph::structural::{
+use kleos_lib::graph::structural::{
     analyze_memory_graph, analyze_system, categorize_system, compose_systems, compute_betweenness,
     compute_distance, compute_impact, detail_analysis, evolve_system, extract_subsystem,
     structural_diff, trace_flow,
 };
-use engram_lib::graph::types::{LinkRecord, MemoryRecord};
-use engram_lib::Result;
+use kleos_lib::graph::types::{LinkRecord, MemoryRecord};
+use kleos_lib::Result;
 use serde_json::{json, Value};
 
 pub fn register(out: &mut Vec<ToolDef>) {
@@ -279,7 +279,7 @@ pub async fn memory_graph(app: &App, args: Value) -> Result<Value> {
                      WHERE user_id = ?1 AND is_forgotten = 0 \
                      ORDER BY id DESC LIMIT ?2",
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let rows = stmt
                 .query_map(rusqlite::params![user_id, limit], |row| {
                     Ok(MemoryRecord {
@@ -289,9 +289,9 @@ pub async fn memory_graph(app: &App, args: Value) -> Result<Value> {
                         source: row.get(3)?,
                     })
                 })
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?
                 .collect::<rusqlite::Result<Vec<_>>>()
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(rows)
         })
         .await?;
@@ -315,7 +315,7 @@ pub async fn memory_graph(app: &App, args: Value) -> Result<Value> {
                          WHERE ms.user_id = ?1 \
                          LIMIT 5000",
                     )
-                    .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                    .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
                 let id_set: std::collections::HashSet<i64> = ids_for_query.into_iter().collect();
                 let rows = stmt
                     .query_map(rusqlite::params![user_id], |row| {
@@ -326,9 +326,9 @@ pub async fn memory_graph(app: &App, args: Value) -> Result<Value> {
                             similarity: row.get(3)?,
                         })
                     })
-                    .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?
+                    .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?
                     .collect::<rusqlite::Result<Vec<_>>>()
-                    .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                    .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
                 Ok(rows
                     .into_iter()
                     .filter(|l| id_set.contains(&l.source_id) && id_set.contains(&l.target_id))

@@ -1,4 +1,4 @@
-use engram_mcp::{handle_jsonrpc, App};
+use kleos_mcp::{handle_jsonrpc, App};
 use serde_json::json;
 
 async fn test_app_and_token() -> (App, String) {
@@ -9,19 +9,19 @@ async fn test_app_and_token() -> (App, String) {
                 "INSERT INTO users (username, email, role, is_admin) VALUES ('mcp-test', 'mcp@example.com', 'admin', 1)",
                 (),
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         })
         .await
         .unwrap();
-    let (_, token) = engram_lib::auth::create_key(
+    let (_, token) = kleos_lib::auth::create_key(
         &app.db,
         1,
         "mcp-test",
         vec![
-            engram_lib::auth::Scope::Read,
-            engram_lib::auth::Scope::Write,
-            engram_lib::auth::Scope::Admin,
+            kleos_lib::auth::Scope::Read,
+            kleos_lib::auth::Scope::Write,
+            kleos_lib::auth::Scope::Admin,
         ],
         None,
     )
@@ -142,7 +142,7 @@ async fn http_transport_round_trip() {
     use tower::util::ServiceExt;
 
     let (app, token) = test_app_and_token().await;
-    let router = engram_mcp::transport::http::router(app.clone());
+    let router = kleos_mcp::transport::http::router(app.clone());
 
     let init = router
         .clone()

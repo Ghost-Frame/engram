@@ -1,10 +1,10 @@
 use axum::{extract::State, routing::post, Json, Router};
-use engram_lib::memory::{
+use kleos_lib::memory::{
     self,
     search::hybrid_search,
     types::{SearchRequest, StoreRequest},
 };
-use engram_lib::webhooks::resolve_and_validate_url;
+use kleos_lib::webhooks::resolve_and_validate_url;
 use rusqlite::params;
 use serde_json::{json, Value};
 
@@ -149,7 +149,7 @@ async fn onboard(State(state): State<AppState>, Auth(auth): Auth) -> Result<Json
                     params![uid],
                     |row| row.get::<_, i64>(0),
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(count)
         })
         .await
@@ -195,7 +195,7 @@ async fn fetch_url(
     Json(body): Json<FetchBody>,
 ) -> Result<Json<Value>, AppError> {
     if body.url.trim().is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "'url' is required".into(),
         )));
     }
@@ -205,24 +205,24 @@ async fn fetch_url(
     // closes the DNS-rebinding SSRF gap where a public domain resolves to
     // 127.0.0.1, 169.254.169.254, RFC1918 space, etc.
     resolve_and_validate_url(&body.url).await.map_err(|e| {
-        AppError(engram_lib::EngError::InvalidInput(format!(
+        AppError(kleos_lib::EngError::InvalidInput(format!(
             "URL rejected: {}",
             e
         )))
     })?;
 
     let parsed = url::Url::parse(&body.url)
-        .map_err(|_| AppError(engram_lib::EngError::InvalidInput("Invalid URL".into())))?;
+        .map_err(|_| AppError(kleos_lib::EngError::InvalidInput("Invalid URL".into())))?;
 
     let resp = FETCH_CLIENT.get(&body.url).send().await.map_err(|e| {
-        AppError(engram_lib::EngError::Internal(format!(
+        AppError(kleos_lib::EngError::Internal(format!(
             "Fetch error: {}",
             e
         )))
     })?;
 
     if !resp.status().is_success() {
-        return Err(AppError(engram_lib::EngError::Internal(format!(
+        return Err(AppError(kleos_lib::EngError::Internal(format!(
             "Fetch failed: {} {}",
             resp.status().as_u16(),
             resp.status().canonical_reason().unwrap_or("")
@@ -244,10 +244,10 @@ async fn fetch_url(
         let mut buf = Vec::new();
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.map_err(|e| {
-                AppError(engram_lib::EngError::Internal(format!("Read error: {}", e)))
+                AppError(kleos_lib::EngError::Internal(format!("Read error: {}", e)))
             })?;
             if buf.len() + chunk.len() > FETCH_MAX_BODY_BYTES {
-                return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+                return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                     "Response body exceeds {} byte limit",
                     FETCH_MAX_BODY_BYTES
                 ))));
@@ -390,7 +390,7 @@ fn strip_html_tags(html: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use engram_lib::webhooks::resolve_and_validate_url;
+    use kleos_lib::webhooks::resolve_and_validate_url;
 
     /// Regression: /fetch previously only checked literal hostname strings.
     /// A public domain resolving to 127.0.0.1 bypassed the check entirely.

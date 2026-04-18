@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use engram_lib::approvals::{Approval, ApprovalDecision};
+use kleos_lib::approvals::{Approval, ApprovalDecision};
 
 #[derive(Debug, Serialize)]
 pub(super) struct ApprovalResponse {

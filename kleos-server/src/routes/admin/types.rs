@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use engram_lib::cred::ProxyRequest;
+use kleos_lib::cred::ProxyRequest;
 
 #[derive(Debug, Deserialize, Default)]
 pub(super) struct BootstrapBody {

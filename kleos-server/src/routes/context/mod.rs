@@ -16,7 +16,7 @@ use tower_http::timeout::TimeoutLayer;
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::context::{
+use kleos_lib::context::{
     assemble_context, assemble_context_streaming, ContextOptions, ContextProgressEvent,
 };
 
@@ -43,7 +43,7 @@ async fn build_context(
     Json(body): Json<ContextOptions>,
 ) -> Result<Json<Value>, AppError> {
     if body.query.trim().is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "query (string) required".to_string(),
         )));
     }
@@ -70,7 +70,7 @@ async fn build_context_stream(
     Json(body): Json<ContextOptions>,
 ) -> Result<impl IntoResponse, AppError> {
     if body.query.trim().is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "query (string) required".to_string(),
         )));
     }

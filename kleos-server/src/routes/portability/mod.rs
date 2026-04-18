@@ -49,7 +49,7 @@ async fn export_handler(
     State(state): State<AppState>,
     Auth(auth): Auth,
 ) -> Result<Response, AppError> {
-    let data = engram_lib::admin::export_user_data(&state.db, auth.user_id).await?;
+    let data = kleos_lib::admin::export_user_data(&state.db, auth.user_id).await?;
 
     let mut lines: Vec<Result<axum::body::Bytes, std::convert::Infallible>> = Vec::new();
 
@@ -100,7 +100,7 @@ async fn import_handler(
     // Auto-detect format based on shape
     if body.is_array() {
         let arr = body.as_array().ok_or_else(|| {
-            AppError(engram_lib::EngError::InvalidInput(
+            AppError(kleos_lib::EngError::InvalidInput(
                 "expected JSON array".into(),
             ))
         })?;
@@ -133,7 +133,7 @@ async fn import_handler(
             }
         }
     }
-    Err(AppError(engram_lib::EngError::InvalidInput(
+    Err(AppError(kleos_lib::EngError::InvalidInput(
         "unrecognized import format".into(),
     )))
 }
@@ -193,7 +193,7 @@ async fn import_engram_export(
                     "INSERT INTO memories (content, category, source, importance, user_id, sync_id, created_at, updated_at) \
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
                     params![content, category, source, importance, user_id, sync_id, created_at, updated_at],
-                ).map_err(|e| engram_lib::EngError::Internal(e.to_string()))
+                ).map_err(|e| kleos_lib::EngError::Internal(e.to_string()))
             }).await {
                 Ok(_) => imported += 1,
                 Err(e) => { tracing::warn!("import_engram_memory_failed: {}", e); skipped += 1; }
@@ -243,7 +243,7 @@ async fn import_array(
                 "INSERT INTO memories (content, category, source, importance, user_id, sync_id, created_at, updated_at) \
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'), datetime('now'))",
                 params![content, category, source, importance, user_id, sync_id],
-            ).map_err(|e| engram_lib::EngError::Internal(e.to_string()))
+            ).map_err(|e| kleos_lib::EngError::Internal(e.to_string()))
         }).await {
             Ok(_) => imported += 1,
             Err(_) => { skipped += 1; }
@@ -298,7 +298,7 @@ async fn import_mem0_array(
                 "INSERT INTO memories (content, category, source, importance, user_id, sync_id, created_at, updated_at) \
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'), datetime('now'))",
                 params![content, category, source, importance, user_id, sync_id],
-            ).map_err(|e| engram_lib::EngError::Internal(e.to_string()))
+            ).map_err(|e| kleos_lib::EngError::Internal(e.to_string()))
         }).await {
             Ok(_) => imported += 1,
             Err(_) => { skipped += 1; }
@@ -328,15 +328,15 @@ async fn get_state_handler(
         .read(move |conn| {
             let mut stmt = conn
                 .prepare("SELECT key, value FROM app_state WHERE key LIKE ?1 ORDER BY key")
-                .map_err(|e| engram_lib::EngError::Internal(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::Internal(e.to_string()))?;
             let rows = stmt
                 .query_map(params![prefix_like], |row| {
                     Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
                 })
-                .map_err(|e| engram_lib::EngError::Internal(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::Internal(e.to_string()))?;
             let mut result = serde_json::Map::new();
             for row in rows {
-                let (k, v) = row.map_err(|e| engram_lib::EngError::Internal(e.to_string()))?;
+                let (k, v) = row.map_err(|e| kleos_lib::EngError::Internal(e.to_string()))?;
                 let short_key = k[prefix_len..].to_string();
                 result.insert(short_key, Value::String(v));
             }
@@ -356,7 +356,7 @@ async fn delete_state_handler(
         .db
         .write(move |conn| {
             conn.execute("DELETE FROM app_state WHERE key LIKE ?1", params![prefix])
-                .map_err(|e| engram_lib::EngError::Internal(e.to_string()))
+                .map_err(|e| kleos_lib::EngError::Internal(e.to_string()))
         })
         .await
         .map_err(AppError)? as i64;
@@ -371,9 +371,9 @@ async fn list_preferences_handler(
     State(state): State<AppState>,
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
-    let prefs = engram_lib::preferences::list_preferences(&state.db, auth.user_id).await?;
+    let prefs = kleos_lib::preferences::list_preferences(&state.db, auth.user_id).await?;
     Ok(Json(serde_json::to_value(prefs).map_err(|e| {
-        AppError(engram_lib::EngError::Internal(e.to_string()))
+        AppError(kleos_lib::EngError::Internal(e.to_string()))
     })?))
 }
 
@@ -382,9 +382,9 @@ async fn get_preference_handler(
     Auth(auth): Auth,
     Path(key): Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    let pref = engram_lib::preferences::get_preference(&state.db, auth.user_id, &key).await?;
+    let pref = kleos_lib::preferences::get_preference(&state.db, auth.user_id, &key).await?;
     Ok(Json(serde_json::to_value(pref).map_err(|e| {
-        AppError(engram_lib::EngError::Internal(e.to_string()))
+        AppError(kleos_lib::EngError::Internal(e.to_string()))
     })?))
 }
 
@@ -399,7 +399,7 @@ async fn put_preferences_handler(
             .as_str()
             .map(|s| s.to_string())
             .unwrap_or_else(|| val.to_string());
-        engram_lib::preferences::set_preference(&state.db, auth.user_id, key, &v).await?;
+        kleos_lib::preferences::set_preference(&state.db, auth.user_id, key, &v).await?;
         updated += 1;
     }
     Ok(Json(json!({ "updated": updated })))
@@ -409,7 +409,7 @@ async fn delete_all_preferences_handler(
     State(state): State<AppState>,
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
-    let deleted = engram_lib::preferences::delete_all_preferences(&state.db, auth.user_id).await?;
+    let deleted = kleos_lib::preferences::delete_all_preferences(&state.db, auth.user_id).await?;
     Ok(Json(json!({ "deleted": deleted })))
 }
 
@@ -418,6 +418,6 @@ async fn delete_preference_handler(
     Auth(auth): Auth,
     Path(key): Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::preferences::delete_preference(&state.db, auth.user_id, &key).await?;
+    kleos_lib::preferences::delete_preference(&state.db, auth.user_id, &key).await?;
     Ok(Json(json!({ "deleted": true, "key": key })))
 }

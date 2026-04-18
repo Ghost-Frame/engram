@@ -1,7 +1,7 @@
 //! Audit logging for credential access.
 
-use engram_lib::db::Database;
-use engram_lib::EngError;
+use kleos_lib::db::Database;
+use kleos_lib::EngError;
 
 use crate::{CredError, Result};
 
@@ -116,7 +116,7 @@ pub async fn log_audit(
 fn collect_audit_rows(
     stmt: &mut rusqlite::Statement<'_>,
     params: &[&dyn rusqlite::types::ToSql],
-) -> engram_lib::Result<Vec<AuditEntry>> {
+) -> kleos_lib::Result<Vec<AuditEntry>> {
     let v: Vec<AuditEntry> = stmt
         .query_map(params, row_to_audit_entry)
         .map_err(rusqlite_to_eng_error)?

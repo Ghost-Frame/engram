@@ -4,7 +4,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use engram_lib::agents;
+use kleos_lib::agents;
 use hmac::{Hmac, Mac};
 use serde_json::{json, Value};
 use sha2::Sha256;
@@ -35,7 +35,7 @@ async fn register_agent(
     Json(body): Json<RegisterBody>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     if body.name.trim().is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "name (string) required".into(),
         )));
     }
@@ -53,10 +53,10 @@ async fn register_agent(
     .await
     {
         Ok(r) => r,
-        Err(engram_lib::EngError::DatabaseMessage(msg))
+        Err(kleos_lib::EngError::DatabaseMessage(msg))
             if msg.contains("UNIQUE constraint failed") =>
         {
-            return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                 "Agent '{}' already registered",
                 body.name
             ))));
@@ -90,7 +90,7 @@ async fn get_agent(
 ) -> Result<Json<Value>, AppError> {
     let agent = agents::get_agent_by_id(&state.db, id, auth.user_id)
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Agent not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Agent not found".into())))?;
 
     // Omit code_hash from response (matches TS behavior)
     Ok(Json(json!({
@@ -132,10 +132,10 @@ async fn get_passport(
 ) -> Result<Json<Value>, AppError> {
     let agent = agents::get_agent_by_id(&state.db, id, auth.user_id)
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Agent not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Agent not found".into())))?;
 
     if !agent.is_active {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "Agent is revoked".into(),
         )));
     }
@@ -169,7 +169,7 @@ async fn link_key(
 ) -> Result<Json<Value>, AppError> {
     let agent = agents::get_agent_by_id(&state.db, id, auth.user_id)
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Agent not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Agent not found".into())))?;
 
     agents::link_key_to_agent(&state.db, agent.id, body.key_id, auth.user_id).await?;
     Ok(Json(
@@ -186,7 +186,7 @@ async fn get_executions(
     // Verify agent belongs to user
     let agent = agents::get_agent_by_id(&state.db, id, auth.user_id)
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Agent not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Agent not found".into())))?;
 
     let limit = params.limit.unwrap_or(50).min(1000);
     let executions = agents::get_agent_executions(&state.db, agent.id, limit).await?;
@@ -213,7 +213,7 @@ async fn verify(Json(body): Json<VerifyBody>) -> Result<Json<Value>, AppError> {
             json!({ "type": "tool_manifest", "valid": false, "error": "verification not implemented" }),
         ));
     }
-    Err(AppError(engram_lib::EngError::InvalidInput(
+    Err(AppError(kleos_lib::EngError::InvalidInput(
         "Provide 'passport', 'execution', 'message', or 'tool_manifest' to verify".into(),
     )))
 }
@@ -222,7 +222,7 @@ fn signing_secret() -> Result<&'static str, AppError> {
     static SECRET: OnceLock<String> = OnceLock::new();
     let secret = SECRET.get_or_init(load_or_create_signing_secret);
     if secret.trim().is_empty() {
-        return Err(AppError(engram_lib::EngError::Internal(
+        return Err(AppError(kleos_lib::EngError::Internal(
             "signing secret is empty".into(),
         )));
     }
@@ -299,9 +299,9 @@ fn signing_secret_path() -> PathBuf {
 fn sign_value(payload: &Value) -> Result<String, AppError> {
     let secret = signing_secret()?;
     let bytes = serde_json::to_vec(payload)
-        .map_err(|e| AppError(engram_lib::EngError::Internal(e.to_string())))?;
+        .map_err(|e| AppError(kleos_lib::EngError::Internal(e.to_string())))?;
     let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).map_err(
-        |e: hmac::digest::InvalidLength| AppError(engram_lib::EngError::Internal(e.to_string())),
+        |e: hmac::digest::InvalidLength| AppError(kleos_lib::EngError::Internal(e.to_string())),
     )?;
     mac.update(&bytes);
     let digest = mac.finalize().into_bytes();

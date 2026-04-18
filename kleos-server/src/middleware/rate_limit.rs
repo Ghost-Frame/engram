@@ -3,8 +3,8 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use engram_lib::auth::AuthContext;
-use engram_lib::ratelimit;
+use kleos_lib::auth::AuthContext;
+use kleos_lib::ratelimit;
 use std::net::SocketAddr;
 
 use crate::state::AppState;

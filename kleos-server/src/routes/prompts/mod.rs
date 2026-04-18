@@ -5,15 +5,15 @@ use axum::{
 };
 use serde_json::{json, Value};
 
-use engram_lib::context::budget::estimate_tokens;
-use engram_lib::intelligence::growth::list_observations;
-use engram_lib::memory::search::hybrid_search;
-use engram_lib::memory::types::SearchRequest;
-use engram_lib::prompts::{
+use kleos_lib::context::budget::estimate_tokens;
+use kleos_lib::intelligence::growth::list_observations;
+use kleos_lib::memory::search::hybrid_search;
+use kleos_lib::memory::types::SearchRequest;
+use kleos_lib::prompts::{
     build_living_prompt, scrub_credentials, ContradictionInfo, MemorySummary,
 };
-use engram_lib::services::brain::BrainQueryOptions;
-use engram_lib::EngError;
+use kleos_lib::services::brain::BrainQueryOptions;
+use kleos_lib::EngError;
 
 use crate::error::AppError;
 use crate::extractors::Auth;
@@ -38,7 +38,7 @@ async fn get_prompt(
     let budget = q.tokens.unwrap_or(4000).clamp(100, 128000);
     let context = q.context.as_deref().unwrap_or("");
     let mut result =
-        engram_lib::prompts::generate_prompt(&state.db, format, budget, context, auth.user_id)
+        kleos_lib::prompts::generate_prompt(&state.db, format, budget, context, auth.user_id)
             .await?;
     result.prompt = state
         .credd
@@ -371,7 +371,7 @@ async fn post_header(
     let actor_role = body.actor_role.as_deref().unwrap_or("assistant");
     let context = body.context.as_deref().unwrap_or("");
     let limit = body.limit.unwrap_or(10).min(30);
-    let result = engram_lib::prompts::generate_header(
+    let result = kleos_lib::prompts::generate_header(
         &state.db,
         actor_model,
         actor_role,

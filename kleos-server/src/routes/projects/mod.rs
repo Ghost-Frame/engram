@@ -30,16 +30,16 @@ pub fn router() -> Router<AppState> {
 async fn create_project(
     Auth(auth): Auth,
     State(state): State<AppState>,
-    Json(body): Json<engram_lib::projects::CreateProjectBody>,
+    Json(body): Json<kleos_lib::projects::CreateProjectBody>,
 ) -> Result<Json<Value>, AppError> {
     let name = body.name.as_deref().unwrap_or("").trim();
     if name.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "name is required".into(),
         )));
     }
     let status = body.status.as_deref().unwrap_or("active");
-    let status = if engram_lib::projects::VALID_PROJECT_STATUSES.contains(&status) {
+    let status = if kleos_lib::projects::VALID_PROJECT_STATUSES.contains(&status) {
         status
     } else {
         "active"
@@ -48,7 +48,7 @@ async fn create_project(
         .metadata
         .as_ref()
         .map(|m| serde_json::to_string(m).unwrap_or_default());
-    let (id, created_at) = engram_lib::projects::create_project(
+    let (id, created_at) = kleos_lib::projects::create_project(
         &state.db,
         name,
         body.description.as_deref(),
@@ -68,7 +68,7 @@ async fn list_projects(
     Query(q): Query<StatusQuery>,
 ) -> Result<Json<Value>, AppError> {
     let projects =
-        engram_lib::projects::list_projects(&state.db, auth.user_id, q.status.as_deref()).await?;
+        kleos_lib::projects::list_projects(&state.db, auth.user_id, q.status.as_deref()).await?;
     let count = projects.len();
     Ok(Json(json!({ "projects": projects, "count": count })))
 }
@@ -78,11 +78,11 @@ async fn get_project(
     State(state): State<AppState>,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, AppError> {
-    let project = engram_lib::projects::get_project(&state.db, id, auth.user_id)
+    let project = kleos_lib::projects::get_project(&state.db, id, auth.user_id)
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Project not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Project not found".into())))?;
     let memory_ids =
-        engram_lib::projects::get_project_memory_ids(&state.db, id, auth.user_id).await?;
+        kleos_lib::projects::get_project_memory_ids(&state.db, id, auth.user_id).await?;
     Ok(Json(
         json!({ "id": project.id, "name": project.name, "description": project.description, "status": project.status, "metadata": project.metadata, "memory_ids": memory_ids, "created_at": project.created_at }),
     ))
@@ -92,13 +92,13 @@ async fn update_project(
     Auth(auth): Auth,
     State(state): State<AppState>,
     Path(id): Path<i64>,
-    Json(body): Json<engram_lib::projects::UpdateProjectBody>,
+    Json(body): Json<kleos_lib::projects::UpdateProjectBody>,
 ) -> Result<Json<Value>, AppError> {
     let metadata = body
         .metadata
         .as_ref()
         .map(|m| serde_json::to_string(m).unwrap_or_default());
-    engram_lib::projects::update_project(
+    kleos_lib::projects::update_project(
         &state.db,
         id,
         auth.user_id,
@@ -116,7 +116,7 @@ async fn delete_project_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::projects::delete_project(&state.db, id, auth.user_id).await?;
+    kleos_lib::projects::delete_project(&state.db, id, auth.user_id).await?;
     Ok(Json(json!({ "deleted": true, "id": id })))
 }
 
@@ -126,7 +126,7 @@ async fn link_memory(
     Path((id, mid)): Path<(i64, i64)>,
 ) -> Result<Json<Value>, AppError> {
     // link_memory now verifies both project and memory ownership internally
-    engram_lib::projects::link_memory(&state.db, mid, id, auth.user_id).await?;
+    kleos_lib::projects::link_memory(&state.db, mid, id, auth.user_id).await?;
     Ok(Json(
         json!({ "linked": true, "project_id": id, "memory_id": mid }),
     ))
@@ -138,7 +138,7 @@ async fn unlink_memory(
     Path((id, mid)): Path<(i64, i64)>,
 ) -> Result<Json<Value>, AppError> {
     // unlink_memory now verifies project ownership internally
-    engram_lib::projects::unlink_memory(&state.db, mid, id, auth.user_id).await?;
+    kleos_lib::projects::unlink_memory(&state.db, mid, id, auth.user_id).await?;
     Ok(Json(
         json!({ "unlinked": true, "project_id": id, "memory_id": mid }),
     ))

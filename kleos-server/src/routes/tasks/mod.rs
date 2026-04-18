@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::services::chiasm::{
+use kleos_lib::services::chiasm::{
     create_task, delete_task, get_feed as get_task_feed, get_stats as get_task_stats, get_task,
     list_task_history, list_tasks, update_task, CreateTaskRequest, UpdateTaskRequest,
 };

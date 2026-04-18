@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::services::axon::{
+use kleos_lib::services::axon::{
     consume, delete_subscription, ensure_channel, get_cursor, get_event,
     get_stats as get_axon_stats, list_channels, list_subscriptions_for_agent, publish_event,
     query_events, upsert_subscription, PublishEventRequest, SubscribeRequest,
@@ -141,7 +141,7 @@ async fn subscribe_handler(
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     // SECURITY: validate webhook URL before storing to prevent SSRF on delivery.
     if let Some(ref url) = body.webhook_url {
-        engram_lib::webhooks::validate_webhook_url(url)?;
+        kleos_lib::webhooks::validate_webhook_url(url)?;
     }
     let req = SubscribeRequest {
         agent: body.agent,

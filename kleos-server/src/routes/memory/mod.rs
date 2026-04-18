@@ -4,8 +4,8 @@ use axum::{
     routing::{get, post, put},
     Json, Router,
 };
-use engram_lib::intelligence::extraction::fast_extract_facts;
-use engram_lib::memory::{
+use kleos_lib::intelligence::extraction::fast_extract_facts;
+use kleos_lib::memory::{
     self,
     search::{faceted_search, hybrid_search},
     types::{FacetedSearchRequest, ListOptions, SearchRequest, StoreRequest, UpdateRequest},
@@ -64,7 +64,7 @@ fn parse_tags(tags: &Option<String>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn memory_to_json(m: &engram_lib::memory::types::Memory) -> Value {
+fn memory_to_json(m: &kleos_lib::memory::types::Memory) -> Value {
     json!({
         "id": m.id, "content": m.content, "category": m.category,
         "source": m.source, "session_id": m.session_id, "importance": m.importance,
@@ -92,7 +92,7 @@ async fn store_memory(
     Json(mut req): Json<StoreRequest>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     if req.content.trim().is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "content must not be empty".to_string(),
         )));
     }
@@ -591,7 +591,7 @@ async fn search_tags(
     Json(body): Json<SearchTagsBody>,
 ) -> Result<Json<Value>, AppError> {
     if body.tags.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "tags must not be empty".to_string(),
         )));
     }
@@ -683,7 +683,7 @@ async fn synthesize_profile(
     .await?;
 
     for mem in &memories {
-        let _ = engram_lib::personality::extract_personality_signals(
+        let _ = kleos_lib::personality::extract_personality_signals(
             &state.db,
             &mem.content,
             mem.id,
@@ -693,7 +693,7 @@ async fn synthesize_profile(
     }
 
     let _ =
-        engram_lib::personality::synthesize_personality_profile(&state.db, auth.user_id).await?;
+        kleos_lib::personality::synthesize_personality_profile(&state.db, auth.user_id).await?;
     let profile = memory::get_user_profile(&state.db, auth.user_id).await?;
     Ok(Json(json!(profile)))
 }

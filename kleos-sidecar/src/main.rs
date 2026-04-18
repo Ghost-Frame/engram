@@ -5,7 +5,7 @@ mod store;
 mod watcher;
 
 use clap::Parser;
-use engram_lib::llm::{local::LocalModelClient, OllamaConfig};
+use kleos_lib::llm::{local::LocalModelClient, OllamaConfig};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -101,10 +101,10 @@ pub struct SidecarState {
 
 #[tokio::main]
 async fn main() {
-    engram_lib::config::migrate_env_prefix();
+    kleos_lib::config::migrate_env_prefix();
 
     let _otel_guard =
-        engram_lib::observability::init_tracing("engram-sidecar", "engram_sidecar=debug");
+        kleos_lib::observability::init_tracing("engram-sidecar", "kleos_sidecar=debug");
 
     let cli = Cli::parse();
 

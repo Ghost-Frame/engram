@@ -1,8 +1,8 @@
 use crate::auth::{require_admin, resolve_auth};
 use crate::tools::{with_auth_props, ToolDef};
 use crate::App;
-use engram_lib::admin;
-use engram_lib::Result;
+use kleos_lib::admin;
+use kleos_lib::Result;
 use serde_json::{json, Value};
 
 pub fn register(out: &mut Vec<ToolDef>) {
@@ -60,7 +60,7 @@ pub async fn vector_sync_replay(app: &App, args: Value) -> Result<Value> {
 
 async fn memory_replay(app: &App, args: Value) -> Result<Value> {
     Ok(json!(
-        engram_lib::memory::replay_vector_sync_pending(
+        kleos_lib::memory::replay_vector_sync_pending(
             &app.db,
             args.get("limit").and_then(Value::as_u64).unwrap_or(100) as usize,
         )

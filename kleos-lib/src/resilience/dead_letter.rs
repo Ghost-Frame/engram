@@ -3,7 +3,7 @@
 //! Failed service calls are persisted to `service_dead_letters` so operators
 //! can inspect and replay them. The table is created by migration 22.
 //!
-//! Pattern mirrors `webhook_dead_letters` from `engram_lib::webhooks`.
+//! Pattern mirrors `webhook_dead_letters` from `kleos_lib::webhooks`.
 
 use crate::db::Database;
 use crate::{EngError, Result};

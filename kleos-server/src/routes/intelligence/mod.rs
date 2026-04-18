@@ -4,7 +4,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use engram_lib::intelligence::{
+use kleos_lib::intelligence::{
     causal::{add_link, backward_chain, create_chain, get_chain, list_chains},
     consolidation::{consolidate, find_consolidation_candidates, list_consolidations, sweep},
     contradiction::{detect_contradictions, scan_all_contradictions},
@@ -26,7 +26,7 @@ use engram_lib::intelligence::{
     types::FeedbackRequest,
     valence::{analyze_valence, get_emotional_profile, store_valence},
 };
-use engram_lib::memory;
+use kleos_lib::memory;
 use serde_json::{json, Value};
 
 use rusqlite::params;
@@ -434,7 +434,7 @@ async fn sentiment_analyze_handler(
         let mem = memory::get(&state.db, memory_id, auth.user_id).await?;
         mem.content
     } else {
-        return Err(AppError::from(engram_lib::EngError::InvalidInput(
+        return Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "provide either 'content' or 'memory_id'".to_string(),
         )));
     };
@@ -475,7 +475,7 @@ async fn sentiment_history_handler(
                      WHERE user_id = ?1 AND is_forgotten = 0 AND created_at >= ?2 \
                      ORDER BY created_at DESC LIMIT ?3",
                 )
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
             let rows = stmt
                 .query_map(params![auth.user_id, since_owned, limit], |row| {
                     let id: i64 = row.get(0)?;
@@ -483,10 +483,10 @@ async fn sentiment_history_handler(
                     let created_at: String = row.get(2)?;
                     Ok((id, content, created_at))
                 })
-                .map_err(engram_lib::EngError::Database)?;
+                .map_err(kleos_lib::EngError::Database)?;
             let mut history = Vec::new();
             for row in rows {
-                let (id, content, created_at) = row.map_err(engram_lib::EngError::Database)?;
+                let (id, content, created_at) = row.map_err(kleos_lib::EngError::Database)?;
                 let score = sentiment::score_text(&content);
                 history.push(serde_json::json!({
                     "memory_id": id,
@@ -518,7 +518,7 @@ async fn valence_score_handler(
         let result = analyze_valence(content);
         Ok(Json(json!(result)))
     } else {
-        Err(AppError::from(engram_lib::EngError::InvalidInput(
+        Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "provide either 'memory_id' or 'content'".to_string(),
         )))
     }
@@ -620,7 +620,7 @@ async fn extract_handler(
         // Store as temp memory so extraction has a memory_id to reference
         let result = memory::store(
             &state.db,
-            engram_lib::memory::types::StoreRequest {
+            kleos_lib::memory::types::StoreRequest {
                 content: c.clone(),
                 category: "general".to_string(),
                 source: "extraction".to_string(),
@@ -637,7 +637,7 @@ async fn extract_handler(
         .await?;
         (c.clone(), result.id)
     } else {
-        return Err(AppError::from(engram_lib::EngError::InvalidInput(
+        return Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "provide either 'content' or 'memory_id'".to_string(),
         )));
     };

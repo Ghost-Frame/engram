@@ -22,7 +22,7 @@ const HASH_PREFIX_LENGTH: usize = 16;
 /// # Examples
 ///
 /// ```
-/// use engram_lib::tenant::tenant_id_from_user;
+/// use kleos_lib::tenant::tenant_id_from_user;
 ///
 /// // Safe user IDs pass through
 /// assert_eq!(tenant_id_from_user("alice"), "alice");

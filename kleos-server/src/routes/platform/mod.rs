@@ -21,9 +21,9 @@ async fn sync_receive(
     Auth(auth): Auth,
     Json(body): Json<SyncReceiveBody>,
 ) -> Result<Json<Value>, AppError> {
-    let result = engram_lib::sync::receive_sync(&state.db, auth.user_id, body.changes).await?;
+    let result = kleos_lib::sync::receive_sync(&state.db, auth.user_id, body.changes).await?;
     Ok(Json(serde_json::to_value(result).map_err(|e| {
-        AppError(engram_lib::EngError::Internal(e.to_string()))
+        AppError(kleos_lib::EngError::Internal(e.to_string()))
     })?))
 }
 
@@ -35,7 +35,7 @@ async fn get_sync_changes(
     let since = q.since.as_deref().unwrap_or("1970-01-01T00:00:00");
     let limit = q.limit.unwrap_or(100).min(1000);
     let changes =
-        engram_lib::webhooks::get_changes_since(&state.db, since, auth.user_id, limit).await?;
+        kleos_lib::webhooks::get_changes_since(&state.db, since, auth.user_id, limit).await?;
     Ok(Json(json!({
         "changes": changes,
         "count": changes.len(),

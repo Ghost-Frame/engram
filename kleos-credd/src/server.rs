@@ -11,9 +11,9 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing::{info, warn};
 
-use engram_cred::crypto::derive_key;
-use engram_lib::db::migrations::run_migrations;
-use engram_lib::db::Database;
+use kleos_cred::crypto::derive_key;
+use kleos_lib::db::migrations::run_migrations;
+use kleos_lib::db::Database;
 
 use crate::auth::{auth_middleware, preauth_rate_limit};
 use crate::handlers::{agents, resolve, secrets};

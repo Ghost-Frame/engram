@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::approvals::{
+use kleos_lib::approvals::{
     create_approval, decide, expire_stale_for_user, get_approval, list_pending,
     CreateApprovalRequest, DecideRequest,
 };
@@ -47,7 +47,7 @@ async fn get_handler(
 ) -> Result<Json<ApprovalResponse>, AppError> {
     let approval = get_approval(&state.db, &id, auth.user_id)
         .await?
-        .ok_or_else(|| engram_lib::EngError::NotFound(format!("approval {} not found", id)))?;
+        .ok_or_else(|| kleos_lib::EngError::NotFound(format!("approval {} not found", id)))?;
 
     Ok(Json(approval.into()))
 }

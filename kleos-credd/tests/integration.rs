@@ -7,9 +7,9 @@ use http_body_util::BodyExt;
 use serde_json::{json, Value};
 use tower::ServiceExt;
 
-use engram_cred::crypto::derive_key;
-use engram_credd::{build_router, state::AppState};
-use engram_lib::db::Database;
+use kleos_cred::crypto::derive_key;
+use kleos_credd::{build_router, state::AppState};
+use kleos_lib::db::Database;
 
 // ---------------------------------------------------------------------------
 // Test harness

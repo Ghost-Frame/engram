@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::services::loom::{
+use kleos_lib::services::loom::{
     cancel_run, complete_step, create_run, create_workflow, delete_workflow, fail_step, get_logs,
     get_run, get_stats, get_steps, get_workflow, list_runs, list_workflows, update_workflow,
     CreateRunRequest, CreateWorkflowRequest, UpdateWorkflowRequest,

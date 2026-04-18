@@ -3,7 +3,7 @@
 //!
 //! Extracted from [`super`] to keep `memory/mod.rs` focused on CRUD. All
 //! public items here are re-exported from `memory/mod.rs`, so existing call
-//! sites (`engram_lib::memory::replay_vector_sync_pending`, etc.) continue
+//! sites (`kleos_lib::memory::replay_vector_sync_pending`, etc.) continue
 //! to resolve unchanged.
 
 use super::rusqlite_to_eng_error;

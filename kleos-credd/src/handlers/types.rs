@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use engram_cred::types::SecretData;
+use kleos_cred::types::SecretData;
 
 #[derive(Deserialize)]
 pub struct ListQuery {

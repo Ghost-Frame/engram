@@ -12,7 +12,7 @@ pub(super) struct SearchBody {
     pub space_id: Option<i64>,
     pub include_forgotten: Option<bool>,
     pub mode: Option<String>,
-    pub question_type: Option<engram_lib::memory::types::QuestionType>,
+    pub question_type: Option<kleos_lib::memory::types::QuestionType>,
     pub expand_relationships: Option<bool>,
     pub include_links: Option<bool>,
     pub latest_only: Option<bool>,

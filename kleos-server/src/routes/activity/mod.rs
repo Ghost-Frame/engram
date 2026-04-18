@@ -8,7 +8,7 @@ use crate::brain_absorber::absorb_activity_to_brain;
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::activity::{process_activity, ActivityReport};
+use kleos_lib::activity::{process_activity, ActivityReport};
 
 #[allow(dead_code)]
 mod types;
