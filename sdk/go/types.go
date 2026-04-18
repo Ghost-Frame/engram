@@ -1,8 +1,8 @@
-// Package engram provides a Go client for the Engram memory server API.
+// Package kleos provides a Go client for the Kleos memory server API.
 //
 // The client uses only the Go standard library. Structs mirror the core domain
 // objects from the OpenAPI spec served at GET /openapi.json.
-package engram
+package kleos
 
 // Memory is a stored memory record.
 type Memory struct {

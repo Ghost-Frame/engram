@@ -1,3 +1,3 @@
-module github.com/Ghost-Frame/engram-rust/sdk/go
+module github.com/Ghost-Frame/kleos/sdk/go
 
 go 1.22

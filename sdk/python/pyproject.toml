@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "engram-client"
-version = "0.3.1"
-description = "Python client SDK for the Engram memory server"
+name = "kleos-client"
+version = "0.3.2"
+description = "Python client SDK for the Kleos memory server"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -24,7 +24,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/engram_client"]
+packages = ["src/kleos_client"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

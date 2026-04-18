@@ -1,13 +1,13 @@
-# engram (Go SDK)
+# kleos (Go SDK)
 
-Go client for the [Engram](https://github.com/Ghost-Frame/engram-rust) memory server.
+Go client for the [Kleos](https://github.com/Ghost-Frame/engram-rust) memory server.
 
 Uses only the Go standard library -- no third-party dependencies.
 
 ## Install
 
 ```bash
-go get github.com/Ghost-Frame/engram-rust/sdk/go
+go get github.com/Ghost-Frame/kleos/sdk/go
 ```
 
 ## Quick start
@@ -20,18 +20,18 @@ import (
     "fmt"
     "log"
 
-    engram "github.com/Ghost-Frame/engram-rust/sdk/go"
+    kleos "github.com/Ghost-Frame/kleos/sdk/go"
 )
 
 func main() {
-    c := engram.NewClient("http://localhost:4200", "ek-your-key")
+    c := kleos.NewClient("http://localhost:4200", "ek-your-key")
     ctx := context.Background()
 
     // Store a memory
-    result, err := c.Memory.Store(ctx, engram.StoreRequest{
+    result, err := c.Memory.Store(ctx, kleos.StoreRequest{
         Content:    "User prefers dark mode",
         Category:   "preference",
-        Importance: engram.Ptr(7),
+        Importance: kleos.Ptr(7),
     })
     if err != nil {
         log.Fatal(err)
@@ -39,9 +39,9 @@ func main() {
     fmt.Println("Stored ID:", result.ID)
 
     // Search
-    hits, err := c.Search.Search(ctx, engram.SearchRequest{
+    hits, err := c.Search.Search(ctx, kleos.SearchRequest{
         Query: "user preferences",
-        Limit: engram.Ptr(10),
+        Limit: kleos.Ptr(10),
     })
     if err != nil {
         log.Fatal(err)
@@ -51,9 +51,9 @@ func main() {
     }
 
     // Assemble context for an LLM prompt
-    ctx2, err := c.Context.Build(ctx, engram.ContextRequest{
+    ctx2, err := c.Context.Build(ctx, kleos.ContextRequest{
         Query:     "What are the user's preferences?",
-        MaxTokens: engram.Ptr(2000),
+        MaxTokens: kleos.Ptr(2000),
     })
     if err != nil {
         log.Fatal(err)
@@ -89,11 +89,11 @@ err := c.RawPost(ctx, "/intelligence/consolidate", map[string]interface{}{"mode"
 ```go
 result, err := c.Memory.Get(ctx, 99999)
 if err != nil {
-    if engram.IsNotFound(err) {
+    if kleos.IsNotFound(err) {
         fmt.Println("memory not found")
-    } else if engram.IsUnauthorized(err) {
+    } else if kleos.IsUnauthorized(err) {
         fmt.Println("check your API key")
-    } else if e, ok := engram.IsEngramError(err); ok {
+    } else if e, ok := kleos.IsEngramError(err); ok {
         fmt.Printf("HTTP %d: %v\n", e.StatusCode, e)
     }
 }
@@ -101,13 +101,13 @@ if err != nil {
 
 ## Pointer helpers
 
-Optional numeric and boolean fields use `*T`. Use `engram.Ptr(v)` to create
+Optional numeric and boolean fields use `*T`. Use `kleos.Ptr(v)` to create
 a pointer inline:
 
 ```go
-req := engram.SearchRequest{
+req := kleos.SearchRequest{
     Query: "facts",
-    Limit: engram.Ptr(20),
+    Limit: kleos.Ptr(20),
 }
 ```
 

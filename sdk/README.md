@@ -63,19 +63,19 @@ avoid overwriting the hand-written ergonomic wrappers.
 **TypeScript**
 
 ```bash
-npm install @ghost_frame/engram
+npm install @ghost_frame/kleos
 ```
 
 **Python**
 
 ```bash
-pip install engram-client
+pip install kleos-client
 ```
 
 **Go**
 
 ```bash
-go get github.com/Ghost-Frame/engram-rust/sdk/go
+go get github.com/Ghost-Frame/kleos/sdk/go
 ```
 
 ## Authentication
