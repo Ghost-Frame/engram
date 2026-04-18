@@ -1,5 +1,5 @@
 [package]
-name = "engram-cred"
+name = "kleos-cred"
 version = "0.3.1"
 edition = "2021"
 rust-version.workspace = true
@@ -7,6 +7,10 @@ description = "Credential management CLI with encrypted vault and YubiKey suppor
 license = "Elastic-2.0"
 repository = "https://github.com/Ghost-Frame/Engram"
 homepage = "https://engram.lol"
+
+[lib]
+name = "engram_cred"
+path = "src/lib.rs"
 
 [[bin]]
 name = "cred"
@@ -32,7 +36,7 @@ rpassword = "7"
 anyhow = "1"
 shellexpand = "3"
 directories = "6"
-engram-lib = { path = "../engram-lib", version = "0.3.1" }
+kleos-lib = { path = "../kleos-lib", version = "0.3.1" }
 
 # Crypto
 aes-gcm = "0.10"

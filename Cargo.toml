@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["engram-lib", "engram-server", "engram-cli", "engram-sidecar", "engram-approval-tui", "engram-mcp", "engram-cred", "engram-credd", "agent-forge", "engram-migrate"]
+members = ["kleos-lib", "kleos-server", "kleos-cli", "kleos-sidecar", "kleos-approval-tui", "kleos-mcp", "kleos-cred", "kleos-credd", "agent-forge", "kleos-migrate"]
 
 [workspace.package]
 rust-version = "1.94"
