@@ -1,9 +1,9 @@
 """
-EngramClient -- sync and async Python client for the Engram memory server.
+EngramClient -- sync and async Python client for the Kleos memory server.
 
 Sync usage::
 
-    from engram_client import EngramClient
+    from kleos_client import EngramClient
 
     client = EngramClient("http://localhost:4200", api_key="ek-...")
     result = client.store_memory("User prefers dark mode", category="preference")
@@ -12,7 +12,7 @@ Sync usage::
 Async usage::
 
     import asyncio
-    from engram_client import AsyncEngramClient
+    from kleos_client import AsyncEngramClient
 
     async def main():
         client = AsyncEngramClient("http://localhost:4200", api_key="ek-...")

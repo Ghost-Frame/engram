@@ -1,9 +1,9 @@
 """
-engram-client -- Python SDK for the Engram memory server.
+kleos-client -- Python SDK for the Kleos memory server.
 
 Quick start::
 
-    from engram_client import EngramClient
+    from kleos_client import EngramClient
 
     client = EngramClient("http://localhost:4200", api_key="ek-your-key")
 
@@ -23,7 +23,7 @@ Quick start::
 
 Async::
 
-    from engram_client import AsyncEngramClient
+    from kleos_client import AsyncEngramClient
     import asyncio
 
     async def main():

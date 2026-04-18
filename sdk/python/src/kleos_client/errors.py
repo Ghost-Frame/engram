@@ -1,5 +1,5 @@
 """
-Engram client error hierarchy.
+Kleos client error hierarchy.
 
 HTTP status codes map to typed exceptions so callers can handle specific
 failure modes without parsing error strings.

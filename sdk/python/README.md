@@ -1,13 +1,13 @@
-# engram-client (Python SDK)
+# kleos-client (Python SDK)
 
-Python client for the [Engram](https://github.com/Ghost-Frame/engram-rust) memory server.
+Python client for the [Kleos](https://github.com/Ghost-Frame/engram-rust) memory server.
 
 ## Install
 
 ```bash
-pip install engram-client
+pip install kleos-client
 # or with Poetry
-poetry add engram-client
+poetry add kleos-client
 ```
 
 Requires Python 3.10+ and depends on `httpx` and `pydantic`.
@@ -15,7 +15,7 @@ Requires Python 3.10+ and depends on `httpx` and `pydantic`.
 ## Quick start
 
 ```python
-from engram_client import EngramClient
+from kleos_client import EngramClient
 
 client = EngramClient("http://localhost:4200", api_key="ek-your-key")
 
@@ -44,7 +44,7 @@ resp = client.batch([
 
 ```python
 import asyncio
-from engram_client import AsyncEngramClient
+from kleos_client import AsyncEngramClient
 
 async def main():
     async with AsyncEngramClient("http://localhost:4200", api_key="ek-your-key") as c:
@@ -76,7 +76,7 @@ raw = client.raw_post("/intelligence/consolidate", {"mode": "full"})
 ## Error handling
 
 ```python
-from engram_client import EngramError, NotFoundError, AuthError
+from kleos_client import EngramError, NotFoundError, AuthError
 
 try:
     mem = client.get_memory(99999)
