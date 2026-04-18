@@ -6,7 +6,7 @@
 # SQLCipher is vendored at compile time via the "sqlcipher" feature so no
 # system libsqlcipher is needed at runtime.
 # =============================================================================
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.94-bookworm AS builder
 
 WORKDIR /build
 
@@ -30,7 +30,7 @@ RUN cargo build --release -p engram-server -p engram-cli
 # =============================================================================
 FROM debian:bookworm-slim AS runtime
 
-LABEL org.opencontainers.image.source="https://github.com/Ghost-Frame/Engram-rust" \
+LABEL org.opencontainers.image.source="https://github.com/Ghost-Frame/Engram" \
       org.opencontainers.image.description="Engram memory server -- personal knowledge graph and semantic memory store" \
       org.opencontainers.image.licenses="Elastic-2.0"
 
