@@ -20,7 +20,7 @@
 //! # Usage
 //!
 //! ```ignore
-//! use engram_lib::brain::hopfield::{HopfieldNetwork, recall};
+//! use kleos_lib::brain::hopfield::{HopfieldNetwork, recall};
 //!
 //! let mut net = HopfieldNetwork::new();
 //! recall::store_pattern(&db, &mut net, id, &embedding, user_id, importance, 1.0).await?;

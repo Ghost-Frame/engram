@@ -8,7 +8,7 @@ pub mod skills;
 pub mod structural;
 
 use crate::App;
-use engram_lib::Result;
+use kleos_lib::Result;
 use serde_json::{json, Value};
 
 #[derive(Clone, Copy)]
@@ -121,7 +121,7 @@ pub async fn dispatch(app: &App, name: &str, args: Value) -> Result<Value> {
         "skill.fix" => skills::skill_fix(app, args).await,
         "skill.upload" => skills::skill_upload(app, args).await,
         "skill.execute" => skills::skill_execute(app, args).await,
-        _ => Err(engram_lib::EngError::NotFound(format!(
+        _ => Err(kleos_lib::EngError::NotFound(format!(
             "unknown tool: {name}"
         ))),
     }

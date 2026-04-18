@@ -1,5 +1,5 @@
 use crate::{handle_jsonrpc, App};
-use engram_lib::{EngError, Result};
+use kleos_lib::{EngError, Result};
 use serde_json::Value;
 use std::io::{BufRead, BufReader, Write};
 

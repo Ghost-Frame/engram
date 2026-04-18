@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use engram_lib::fsrs;
+use kleos_lib::fsrs;
 use rusqlite::{params, OptionalExtension};
 use serde_json::{json, Value};
 
@@ -25,14 +25,14 @@ async fn review(
     Json(body): Json<ReviewBody>,
 ) -> Result<Json<Value>, AppError> {
     let id = body.id.or(body.memory_id).ok_or_else(|| {
-        AppError(engram_lib::EngError::InvalidInput(
+        AppError(kleos_lib::EngError::InvalidInput(
             "id (or memory_id) required, grade 1-4".into(),
         ))
     })?;
 
     let grade_num = body.grade.unwrap_or(3);
     if !(1..=4).contains(&grade_num) {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "grade must be 1-4".into(),
         )));
     }
@@ -67,7 +67,7 @@ async fn review(
                 },
             )
             .optional()
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
 
@@ -82,10 +82,10 @@ async fn review(
         lapses,
         last_review,
         created_at,
-    ) = row_data.ok_or_else(|| AppError(engram_lib::EngError::NotFound("not found".into())))?;
+    ) = row_data.ok_or_else(|| AppError(kleos_lib::EngError::NotFound("not found".into())))?;
 
     if owner != auth.user_id {
-        return Err(AppError(engram_lib::EngError::NotFound("not found".into())));
+        return Err(AppError(kleos_lib::EngError::NotFound("not found".into())));
     }
 
     // Build current FSRS state if it exists
@@ -156,7 +156,7 @@ async fn review(
                     id
                 ],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         })
         .await?;
@@ -171,7 +171,7 @@ async fn get_state(
 ) -> Result<Json<Value>, AppError> {
     let id = params
         .id
-        .ok_or_else(|| AppError(engram_lib::EngError::InvalidInput("id required".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::InvalidInput("id required".into())))?;
 
     let row_data = state
         .db
@@ -195,7 +195,7 @@ async fn get_state(
                 },
             )
             .optional()
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
 
@@ -210,10 +210,10 @@ async fn get_state(
         lapses,
         last_review_at,
         created_at,
-    ) = row_data.ok_or_else(|| AppError(engram_lib::EngError::NotFound("not found".into())))?;
+    ) = row_data.ok_or_else(|| AppError(kleos_lib::EngError::NotFound("not found".into())))?;
 
     if owner != auth.user_id {
-        return Err(AppError(engram_lib::EngError::NotFound("not found".into())));
+        return Err(AppError(kleos_lib::EngError::NotFound("not found".into())));
     }
 
     // Calculate retrievability
@@ -248,18 +248,18 @@ async fn init_backfill(
         .read(move |conn| {
             let mut stmt = conn
                 .prepare("SELECT id FROM memories WHERE user_id = ?1 AND fsrs_stability IS NULL")
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let mut rows = stmt
                 .query(params![auth.user_id])
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             let mut results = Vec::new();
             while let Some(row) = rows
                 .next()
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?
             {
                 let id: i64 = row
                     .get(0)
-                    .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                    .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
                 results.push(id);
             }
             Ok(results)
@@ -288,7 +288,7 @@ async fn init_backfill(
                         *id
                     ],
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             }
             Ok(())
         })

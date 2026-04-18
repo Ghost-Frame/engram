@@ -1,6 +1,6 @@
 use crate::App;
-use engram_lib::auth::{validate_key, AuthContext, Scope};
-use engram_lib::{EngError, Result};
+use kleos_lib::auth::{validate_key, AuthContext, Scope};
+use kleos_lib::{EngError, Result};
 use serde_json::Value;
 
 /// Resolve authentication from the JSON-RPC arguments.

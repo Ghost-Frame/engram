@@ -13,7 +13,7 @@
 
 use std::sync::Arc;
 
-use engram_lib::db::Database;
+use kleos_lib::db::Database;
 use rusqlite::params;
 
 async fn seed_db() -> Arc<Database> {
@@ -29,7 +29,7 @@ async fn seed_db() -> Arc<Database> {
                  VALUES (?1, 'general', 'test', 1, 5, 1.0, datetime('now'), datetime('now'), 1, 0, 0)",
                 params![format!("content-{i}")],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
         }
         // A few links for graph plans.
         for s in 1..5 {
@@ -39,7 +39,7 @@ async fn seed_db() -> Arc<Database> {
                      VALUES (?1, ?2, 0.5, 'similarity', datetime('now'))",
                     params![s, t],
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             }
         }
         Ok(())
@@ -58,17 +58,17 @@ async fn explain(
     db.read(move |conn| {
         let mut stmt = conn
             .prepare(&explain_sql)
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
         let params_ref: Vec<&dyn rusqlite::ToSql> = params_json
             .iter()
             .map(|v| v as &dyn rusqlite::ToSql)
             .collect();
         let rows = stmt
             .query_map(params_ref.as_slice(), |row| row.get::<_, String>(3))
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
         let mut out = Vec::new();
         for r in rows {
-            out.push(r.map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?);
+            out.push(r.map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?);
         }
         Ok(out)
     })

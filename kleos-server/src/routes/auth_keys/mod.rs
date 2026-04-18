@@ -4,7 +4,7 @@ use axum::{
     routing::{delete, post},
     Json, Router,
 };
-use engram_lib::auth;
+use kleos_lib::auth;
 use rusqlite::{params, OptionalExtension};
 use serde_json::{json, Value};
 
@@ -32,7 +32,7 @@ async fn create_key(
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     // Only admin can create keys
     if !auth_ctx.has_scope(&auth::Scope::Admin) {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "Admin scope required".into(),
         )));
     }
@@ -50,11 +50,11 @@ async fn create_key(
                     params![uid],
                     |row| row.get(0),
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
             })
             .await?;
         if !exists {
-            return Err(AppError(engram_lib::EngError::NotFound(format!(
+            return Err(AppError(kleos_lib::EngError::NotFound(format!(
                 "user {} not found",
                 target_user_id
             ))));
@@ -72,7 +72,7 @@ async fn create_key(
     // scopes they do not themselves possess.
     for scope in &scopes {
         if !auth_ctx.has_scope(scope) {
-            return Err(AppError(engram_lib::EngError::Auth(format!(
+            return Err(AppError(kleos_lib::EngError::Auth(format!(
                 "cannot grant scope '{}' that caller does not hold",
                 scope
             ))));
@@ -143,14 +143,14 @@ async fn revoke_key(
                     |row| row.get(0),
                 )
                 .optional()
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
             })
             .await?;
 
         match owner {
             Some(uid) => target_user = uid,
             None => {
-                return Err(AppError(engram_lib::EngError::NotFound(
+                return Err(AppError(kleos_lib::EngError::NotFound(
                     "key not found".into(),
                 )));
             }
@@ -158,7 +158,7 @@ async fn revoke_key(
     } else {
         let keys = auth::list_keys(&state.db, auth_ctx.user_id).await?;
         if !keys.iter().any(|k| k.id == id) {
-            return Err(AppError(engram_lib::EngError::Auth("Forbidden".into())));
+            return Err(AppError(kleos_lib::EngError::Auth("Forbidden".into())));
         }
     }
 
@@ -172,7 +172,7 @@ async fn rotate_key(
     Json(body): Json<RotateKeyBody>,
 ) -> Result<Json<Value>, AppError> {
     if !auth_ctx.has_scope(&auth::Scope::Admin) {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -182,7 +182,7 @@ async fn rotate_key(
     let old_key = keys
         .iter()
         .find(|k| k.id == body.key_id)
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Key not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Key not found".into())))?;
 
     // Create new key with same properties
     let new_name = format!("{} (rotated)", old_key.name);
@@ -220,7 +220,7 @@ async fn rotate_key(
                 "UPDATE api_keys SET expires_at = ?1 WHERE id = ?2 AND user_id = ?3",
                 params![grace_expiry_clone, key_id, user_id],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
 
@@ -245,7 +245,7 @@ async fn create_user(
     Json(body): Json<CreateUserBody>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     if !auth_ctx.has_scope(&auth::Scope::Admin) {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -269,7 +269,7 @@ async fn create_user(
                 params![username, email, role, is_admin],
                 |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)),
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
 
@@ -281,7 +281,7 @@ async fn create_user(
                 "INSERT INTO spaces (user_id, name) VALUES (?1, 'default')",
                 params![id],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await
     {
@@ -307,7 +307,7 @@ async fn list_users(
     Auth(auth_ctx): Auth,
 ) -> Result<Json<Value>, AppError> {
     if !auth_ctx.has_scope(&auth::Scope::Admin) {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -319,7 +319,7 @@ async fn list_users(
                 .prepare(
                     "SELECT id, username, email, role, is_admin, created_at FROM users ORDER BY id",
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let rows = stmt
                 .query_map([], |r| {
@@ -332,12 +332,12 @@ async fn list_users(
                         r.get::<_, String>(5)?,
                     ))
                 })
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let mut result = Vec::new();
             for row in rows {
                 let (id, username, email, role, is_admin, created_at) =
-                    row.map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                    row.map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
                 result.push(json!({
                     "id": id,
                     "username": username,
@@ -363,7 +363,7 @@ async fn create_space(
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     let name = body.name.trim().to_string();
     if name.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "name is required".into(),
         )));
     }
@@ -380,7 +380,7 @@ async fn create_space(
                 params![user_id, name_clone, description],
                 |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)),
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
 
@@ -407,7 +407,7 @@ async fn list_spaces(
                 .prepare(
                     "SELECT id, name, description, created_at FROM spaces WHERE user_id = ?1 ORDER BY id",
                 )
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let rows = stmt
                 .query_map(params![user_id], |r| {
@@ -418,12 +418,12 @@ async fn list_spaces(
                         r.get::<_, String>(3)?,
                     ))
                 })
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
 
             let mut result = Vec::new();
             for row in rows {
                 let (id, name, description, created_at) =
-                    row.map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+                    row.map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
                 result.push(json!({
                     "id": id,
                     "name": name,
@@ -453,19 +453,19 @@ async fn delete_space(
                 |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)),
             )
             .optional()
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
 
     let (owner, name) =
-        row.ok_or_else(|| AppError(engram_lib::EngError::NotFound("Not found".into())))?;
+        row.ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Not found".into())))?;
 
     if owner != auth_ctx.user_id && !auth_ctx.has_scope(&auth::Scope::Admin) {
-        return Err(AppError(engram_lib::EngError::Auth("Forbidden".into())));
+        return Err(AppError(kleos_lib::EngError::Auth("Forbidden".into())));
     }
 
     if name == "default" {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "Cannot delete default space".into(),
         )));
     }
@@ -474,7 +474,7 @@ async fn delete_space(
         .db
         .write(move |conn| {
             conn.execute("DELETE FROM spaces WHERE id = ?1", params![id])
-                .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+                .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?;
 

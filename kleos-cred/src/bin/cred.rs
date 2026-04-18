@@ -13,13 +13,13 @@ use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crossterm::ExecutableCommand;
-use engram_cred::crypto::{
+use kleos_cred::crypto::{
     decrypt_recovery, derive_key_legacy, encrypt_recovery, generate_hmac_secret, KEY_SIZE,
 };
-use engram_cred::storage;
-use engram_cred::types::SecretData;
-use engram_cred::yubikey;
-use engram_lib::db::Database;
+use kleos_cred::storage;
+use kleos_cred::types::SecretData;
+use kleos_cred::yubikey;
+use kleos_lib::db::Database;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, TableState};
 use zeroize::Zeroize;
@@ -829,11 +829,11 @@ async fn init_schema(db: &Database) -> Result<()> {
 }
 
 async fn cmd_agent_key(db: &Database, action: AgentKeyAction) -> Result<()> {
-    use engram_cred::agent_keys;
+    use kleos_cred::agent_keys;
 
     match action {
         AgentKeyAction::Generate { name, description } => {
-            let perms = engram_cred::AgentKeyPermissions::default();
+            let perms = kleos_cred::AgentKeyPermissions::default();
             let (key_str, agent_key) = agent_keys::create_agent_key(db, 0, &name, &perms)
                 .await
                 .map_err(|e| anyhow::anyhow!("{}", e))?;

@@ -11,7 +11,7 @@ use std::sync::Arc;
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::{AppState, SessionBroadcast};
-use engram_lib::sessions::{
+use kleos_lib::sessions::{
     append_output, create_session, get_session, get_session_output, list_sessions,
     SessionCreateRequest,
 };
@@ -47,7 +47,7 @@ async fn create_session_handler(
             .filter(|(uid, _)| *uid == auth.user_id)
             .count();
         if count >= MAX_SESSIONS_PER_USER {
-            return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+            return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                 "session limit reached ({} max)",
                 MAX_SESSIONS_PER_USER
             ))));
@@ -66,7 +66,7 @@ async fn list_sessions_handler(
     Auth(auth): Auth,
     Query(params): Query<ListSessionsParams>,
 ) -> Result<Json<Value>, AppError> {
-    let sessions: Vec<engram_lib::sessions::SessionInfo> =
+    let sessions: Vec<kleos_lib::sessions::SessionInfo> =
         list_sessions(&state.db, auth.user_id, params.limit, params.offset).await?;
     Ok(Json(
         json!({ "sessions": sessions, "count": sessions.len() }),
@@ -93,7 +93,7 @@ async fn append_handler(
     // from filling the 10k-entry buffer with 2 MiB lines (~20 GiB total).
     const MAX_LINE_LEN: usize = 65536;
     if body.line.len() > MAX_LINE_LEN {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "line exceeds max length ({} bytes)",
             MAX_LINE_LEN
         ))));

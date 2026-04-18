@@ -6,7 +6,7 @@ use axum::{
 use serde_json::Value;
 
 use crate::{error::AppError, extractors::Auth, state::AppState};
-use engram_lib::errors_log::{self, ListErrorsRequest, LogErrorRequest};
+use kleos_lib::errors_log::{self, ListErrorsRequest, LogErrorRequest};
 
 #[allow(dead_code)]
 mod types;
@@ -33,6 +33,6 @@ async fn get_errors(
 ) -> Result<Json<Value>, AppError> {
     let events = errors_log::list_errors(&state.db, query).await?;
     Ok(Json(
-        serde_json::to_value(events).map_err(engram_lib::EngError::Serialization)?,
+        serde_json::to_value(events).map_err(kleos_lib::EngError::Serialization)?,
     ))
 }

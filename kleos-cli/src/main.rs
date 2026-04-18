@@ -235,9 +235,9 @@ fn value_as_string(value: Option<&Value>) -> Option<String> {
 
 #[tokio::main]
 async fn main() {
-    engram_lib::config::migrate_env_prefix();
+    kleos_lib::config::migrate_env_prefix();
 
-    let _otel_guard = engram_lib::observability::init_tracing("engram-cli", "warn");
+    let _otel_guard = kleos_lib::observability::init_tracing("engram-cli", "warn");
 
     let cli = Cli::parse();
     let api_key = cli

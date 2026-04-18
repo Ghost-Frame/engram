@@ -4,9 +4,9 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use engram_lib::auth::{self, Scope};
-use engram_lib::quota;
-use engram_lib::ratelimit;
+use kleos_lib::auth::{self, Scope};
+use kleos_lib::quota;
+use kleos_lib::ratelimit;
 use serde_json::{json, Value};
 
 use crate::{error::AppError, extractors::Auth, state::AppState};
@@ -43,13 +43,13 @@ async fn create_api_key_handler(
         .filter(|s| !s.is_empty())
         .collect();
     if requested.is_empty() {
-        return Err(AppError::from(engram_lib::EngError::InvalidInput(
+        return Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "scopes must be one of: read, write, admin".into(),
         )));
     }
     let wants_admin = requested.iter().any(|s| s == "admin" || s == "*");
     if wants_admin && !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "admin scope required to mint admin keys".into(),
         )));
     }
@@ -57,7 +57,7 @@ async fn create_api_key_handler(
         match s.as_str() {
             "read" | "write" | "admin" | "*" => {}
             other => {
-                return Err(AppError::from(engram_lib::EngError::InvalidInput(format!(
+                return Err(AppError::from(kleos_lib::EngError::InvalidInput(format!(
                     "unknown scope: {}",
                     other
                 ))));
@@ -73,7 +73,7 @@ async fn create_api_key_handler(
                 _ => continue,
             };
             if !auth.has_scope(&scope) {
-                return Err(AppError::from(engram_lib::EngError::Auth(format!(
+                return Err(AppError::from(kleos_lib::EngError::Auth(format!(
                     "caller lacks {} scope and cannot grant it",
                     s
                 ))));

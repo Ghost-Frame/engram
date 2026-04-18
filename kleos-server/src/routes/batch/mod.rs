@@ -3,12 +3,12 @@
 // ============================================================================
 
 use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
-use engram_lib::memory::{self, types::StoreRequest};
+use kleos_lib::memory::{self, types::StoreRequest};
 use serde_json::{json, Value};
 
 use crate::{error::AppError, extractors::Auth, state::AppState};
 
-use engram_lib::validation::MAX_BATCH_OPS;
+use kleos_lib::validation::MAX_BATCH_OPS;
 
 mod types;
 use types::{BatchOp, BatchRequest, BatchResult, LinkBody, StoreBody, UpdateBody};
@@ -31,12 +31,12 @@ async fn batch_handler(
     Json(req): Json<BatchRequest>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     if req.ops.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "ops must not be empty".to_string(),
         )));
     }
     if req.ops.len() > MAX_BATCH_OPS {
-        return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
             "batch limited to {} ops, got {}",
             MAX_BATCH_OPS,
             req.ops.len()
@@ -167,7 +167,7 @@ async fn execute_update(
     index: usize,
     body: UpdateBody,
 ) -> BatchResult {
-    let req = engram_lib::memory::types::UpdateRequest {
+    let req = kleos_lib::memory::types::UpdateRequest {
         content: body.content,
         category: body.category,
         importance: body.importance,

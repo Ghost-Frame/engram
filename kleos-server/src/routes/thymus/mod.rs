@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::services::thymus::{
+use kleos_lib::services::thymus::{
     create_rubric, delete_rubric, evaluate, get_drift_events, get_evaluation, get_metric_summary,
     get_metrics, get_rubric, get_session_quality, get_stats, list_evaluations, list_rubrics,
     record_drift_event, record_metric, record_session_quality, update_rubric, CreateRubricRequest,

@@ -6,7 +6,7 @@ rust-version.workspace = true
 description = "Credential management daemon for Engram"
 
 [lib]
-name = "engram_credd"
+name = "kleos_credd"
 path = "src/lib.rs"
 
 [[bin]]

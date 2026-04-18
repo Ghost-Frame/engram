@@ -1,13 +1,13 @@
 use crate::auth::resolve_auth;
 use crate::tools::{with_auth_props, ToolDef};
 use crate::{invalid_input, App};
-use engram_lib::intelligence::{
+use kleos_lib::intelligence::{
     causal, consolidation, contradiction, decomposition, extraction, reflections, sentiment,
     temporal,
 };
-use engram_lib::memory;
-use engram_lib::memory::types::StoreRequest;
-use engram_lib::Result;
+use kleos_lib::memory;
+use kleos_lib::memory::types::StoreRequest;
+use kleos_lib::Result;
 use serde_json::{json, Value};
 
 pub fn register(out: &mut Vec<ToolDef>) {

@@ -4,8 +4,8 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use engram_lib::auth::Scope;
-use engram_lib::jobs::{
+use kleos_lib::auth::Scope;
+use kleos_lib::jobs::{
     self, cleanup_jobs, count_failed_jobs, list_failed_jobs, list_pending_jobs, list_running_jobs,
     purge_failed_jobs, retry_failed_job,
 };
@@ -23,7 +23,7 @@ async fn list_jobs(
 ) -> Result<Json<Value>, AppError> {
     // Admin only
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -49,7 +49,7 @@ async fn list_jobs(
             (jobs, total)
         }
         _ => {
-            return Err(AppError::from(engram_lib::EngError::InvalidInput(
+            return Err(AppError::from(kleos_lib::EngError::InvalidInput(
                 "Invalid status. Use: failed, pending, running".into(),
             )));
         }
@@ -92,14 +92,14 @@ async fn retry_job_handler(
 ) -> Result<Json<Value>, AppError> {
     // Admin only
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
 
     let retried = retry_failed_job(&state.db, body.id).await?;
     if !retried {
-        return Err(AppError::from(engram_lib::EngError::NotFound(
+        return Err(AppError::from(kleos_lib::EngError::NotFound(
             "Job not found or not in failed state".into(),
         )));
     }
@@ -114,7 +114,7 @@ async fn purge_jobs_handler(
 ) -> Result<Json<Value>, AppError> {
     // Admin only
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -134,7 +134,7 @@ async fn job_stats_handler(
 ) -> Result<Json<Value>, AppError> {
     // Admin only
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -151,7 +151,7 @@ async fn list_pending_handler(
     Query(params): Query<PaginationQuery>,
 ) -> Result<Json<Value>, AppError> {
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -181,7 +181,7 @@ async fn list_running_handler(
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -211,7 +211,7 @@ async fn list_failed_handler(
     Query(params): Query<PaginationQuery>,
 ) -> Result<Json<Value>, AppError> {
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
@@ -247,13 +247,13 @@ async fn retry_job_by_id_handler(
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, AppError> {
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }
     let retried = retry_failed_job(&state.db, id).await?;
     if !retried {
-        return Err(AppError::from(engram_lib::EngError::NotFound(
+        return Err(AppError::from(kleos_lib::EngError::NotFound(
             "Job not found or not in failed state".into(),
         )));
     }
@@ -266,7 +266,7 @@ async fn cleanup_jobs_handler(
     Json(body): Json<CleanupBody>,
 ) -> Result<Json<Value>, AppError> {
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "Admin required".into(),
         )));
     }

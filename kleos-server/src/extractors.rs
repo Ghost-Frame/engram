@@ -2,7 +2,7 @@ use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::http::StatusCode;
 use axum::Json;
-use engram_lib::auth::AuthContext;
+use kleos_lib::auth::AuthContext;
 use serde_json::json;
 
 pub struct Auth(pub AuthContext);

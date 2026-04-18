@@ -25,7 +25,7 @@ async fn list_scratch(
     State(state): State<AppState>,
     Query(q): Query<ScratchQuery>,
 ) -> Result<Json<Value>, AppError> {
-    let entries = engram_lib::scratchpad::list_entries(
+    let entries = kleos_lib::scratchpad::list_entries(
         &state.db,
         auth.user_id,
         q.agent.as_deref(),
@@ -40,7 +40,7 @@ async fn list_scratch(
 async fn put_scratch(
     Auth(auth): Auth,
     State(state): State<AppState>,
-    Json(body): Json<engram_lib::scratchpad::ScratchPutBody>,
+    Json(body): Json<kleos_lib::scratchpad::ScratchPutBody>,
 ) -> Result<Json<Value>, AppError> {
     let session = body.session.as_deref().unwrap_or("default");
     let agent = body.agent.as_deref().unwrap_or("unknown");
@@ -50,7 +50,7 @@ async fn put_scratch(
     let mut stored = 0;
     for e in &entries {
         let value = e.value.as_deref().unwrap_or("");
-        engram_lib::scratchpad::upsert_entry(
+        kleos_lib::scratchpad::upsert_entry(
             &state.db,
             auth.user_id,
             session,
@@ -73,7 +73,7 @@ async fn delete_session(
     State(state): State<AppState>,
     Path(session): Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::scratchpad::delete_session(&state.db, auth.user_id, &session).await?;
+    kleos_lib::scratchpad::delete_session(&state.db, auth.user_id, &session).await?;
     Ok(Json(json!({ "deleted": true, "session": session })))
 }
 
@@ -82,7 +82,7 @@ async fn delete_key(
     State(state): State<AppState>,
     Path((session, key)): Path<(String, String)>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::scratchpad::delete_session_key(&state.db, auth.user_id, &session, &key).await?;
+    kleos_lib::scratchpad::delete_session_key(&state.db, auth.user_id, &session, &key).await?;
     Ok(Json(
         json!({ "deleted": true, "session": session, "key": key }),
     ))
@@ -96,7 +96,7 @@ async fn promote(
 ) -> Result<Json<Value>, AppError> {
     let combine = body.combine.unwrap_or(false);
     let category = body.category.as_deref().unwrap_or("discovery");
-    let ids = engram_lib::scratchpad::promote_entries(
+    let ids = kleos_lib::scratchpad::promote_entries(
         &state.db,
         auth.user_id,
         &session,

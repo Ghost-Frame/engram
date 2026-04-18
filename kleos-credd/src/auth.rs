@@ -13,8 +13,8 @@ use axum::{
 use std::hash::{Hash, Hasher};
 use std::net::SocketAddr;
 
-use engram_cred::agent_keys::{parse_agent_key, validate_agent_key, AgentKey};
-use engram_cred::crypto::hash_key;
+use kleos_cred::agent_keys::{parse_agent_key, validate_agent_key, AgentKey};
+use kleos_cred::crypto::hash_key;
 use hex;
 use subtle::ConstantTimeEq;
 

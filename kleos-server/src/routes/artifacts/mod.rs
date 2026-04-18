@@ -5,12 +5,12 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use engram_lib::artifacts::{self, StoreArtifactOpts};
+use kleos_lib::artifacts::{self, StoreArtifactOpts};
 use rusqlite::OptionalExtension;
 use serde_json::{json, Value};
 
 use crate::{error::AppError, extractors::Auth, state::AppState};
-use engram_lib::validation::MAX_ARTIFACT_UPLOAD_BYTES as MAX_UPLOAD_BYTES;
+use kleos_lib::validation::MAX_ARTIFACT_UPLOAD_BYTES as MAX_UPLOAD_BYTES;
 
 #[allow(dead_code)]
 mod types;
@@ -53,12 +53,12 @@ async fn list_for_memory(
                 |row| row.get(0),
             )
             .optional()
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Not found".into())))?;
     if owner != auth.user_id {
-        return Err(AppError(engram_lib::EngError::NotFound("Not found".into())));
+        return Err(AppError(kleos_lib::EngError::NotFound("Not found".into())));
     }
 
     let artifacts = artifacts::get_artifacts_by_memory(&state.db, memory_id, auth.user_id).await?;
@@ -96,7 +96,7 @@ async fn upload_artifact(
     while let Some(field) = multipart
         .next_field()
         .await
-        .map_err(|e| AppError(engram_lib::EngError::InvalidInput(e.to_string())))?
+        .map_err(|e| AppError(kleos_lib::EngError::InvalidInput(e.to_string())))?
     {
         let field_name = field.name().unwrap_or("").to_string();
         match field_name.as_str() {
@@ -106,9 +106,9 @@ async fn upload_artifact(
                 let bytes = field
                     .bytes()
                     .await
-                    .map_err(|e| AppError(engram_lib::EngError::InvalidInput(e.to_string())))?;
+                    .map_err(|e| AppError(kleos_lib::EngError::InvalidInput(e.to_string())))?;
                 if bytes.len() > MAX_UPLOAD_BYTES {
-                    return Err(AppError(engram_lib::EngError::InvalidInput(format!(
+                    return Err(AppError(kleos_lib::EngError::InvalidInput(format!(
                         "File too large: {} bytes (max {})",
                         bytes.len(),
                         MAX_UPLOAD_BYTES
@@ -119,37 +119,37 @@ async fn upload_artifact(
             "name" => {
                 name =
                     Some(field.text().await.map_err(|e| {
-                        AppError(engram_lib::EngError::InvalidInput(e.to_string()))
+                        AppError(kleos_lib::EngError::InvalidInput(e.to_string()))
                     })?);
             }
             "artifact_type" => {
                 artifact_type =
                     Some(field.text().await.map_err(|e| {
-                        AppError(engram_lib::EngError::InvalidInput(e.to_string()))
+                        AppError(kleos_lib::EngError::InvalidInput(e.to_string()))
                     })?);
             }
             "source_url" => {
                 source_url =
                     Some(field.text().await.map_err(|e| {
-                        AppError(engram_lib::EngError::InvalidInput(e.to_string()))
+                        AppError(kleos_lib::EngError::InvalidInput(e.to_string()))
                     })?);
             }
             "agent" => {
                 agent =
                     Some(field.text().await.map_err(|e| {
-                        AppError(engram_lib::EngError::InvalidInput(e.to_string()))
+                        AppError(kleos_lib::EngError::InvalidInput(e.to_string()))
                     })?);
             }
             "session_id" => {
                 session_id =
                     Some(field.text().await.map_err(|e| {
-                        AppError(engram_lib::EngError::InvalidInput(e.to_string()))
+                        AppError(kleos_lib::EngError::InvalidInput(e.to_string()))
                     })?);
             }
             "metadata" => {
                 metadata =
                     Some(field.text().await.map_err(|e| {
-                        AppError(engram_lib::EngError::InvalidInput(e.to_string()))
+                        AppError(kleos_lib::EngError::InvalidInput(e.to_string()))
                     })?);
             }
             _ => {
@@ -159,7 +159,7 @@ async fn upload_artifact(
     }
 
     let data = file_data.ok_or_else(|| {
-        AppError(engram_lib::EngError::InvalidInput(
+        AppError(kleos_lib::EngError::InvalidInput(
             "missing required 'file' field".into(),
         ))
     })?;
@@ -223,12 +223,12 @@ async fn download_artifact(
 ) -> Result<Response, AppError> {
     let artifact = artifacts::get_artifact_by_id(&state.db, id, auth.user_id)
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Artifact not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Artifact not found".into())))?;
 
     // Verify the owning memory belongs to this user
     // Reject orphaned artifacts (no memory_id) to prevent BOLA
     let memory_id = artifact.memory_id.ok_or_else(|| {
-        AppError(engram_lib::EngError::NotFound(
+        AppError(kleos_lib::EngError::NotFound(
             "Artifact has no associated memory".into(),
         ))
     })?;
@@ -242,19 +242,19 @@ async fn download_artifact(
                 |row| row.get(0),
             )
             .optional()
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))
         })
         .await?
-        .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Not found".into())))?;
+        .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Not found".into())))?;
     if owner != auth.user_id {
-        return Err(AppError(engram_lib::EngError::NotFound("Not found".into())));
+        return Err(AppError(kleos_lib::EngError::NotFound("Not found".into())));
     }
 
     // Get artifact data (inline storage only for now)
     let data = artifacts::get_artifact_data(&state.db, id, auth.user_id)
         .await?
         .ok_or_else(|| {
-            AppError(engram_lib::EngError::Internal(
+            AppError(kleos_lib::EngError::Internal(
                 "Artifact has no data".into(),
             ))
         })?;

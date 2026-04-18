@@ -34,7 +34,7 @@ async fn create_webhook_handler(
     Json(body): Json<CreateWebhookBody>,
 ) -> Result<(StatusCode, Json<Value>), AppError> {
     let events = body.events.unwrap_or_else(|| vec!["*".to_string()]);
-    let (id, created_at) = engram_lib::webhooks::create_webhook(
+    let (id, created_at) = kleos_lib::webhooks::create_webhook(
         &state.db,
         &body.url,
         &events,
@@ -58,7 +58,7 @@ async fn list_webhooks_handler(
     State(state): State<AppState>,
     Auth(auth): Auth,
 ) -> Result<Json<Value>, AppError> {
-    let items = engram_lib::webhooks::list_webhooks(&state.db, auth.user_id).await?;
+    let items = kleos_lib::webhooks::list_webhooks(&state.db, auth.user_id).await?;
     Ok(Json(json!({ "webhooks": items, "count": items.len() })))
 }
 
@@ -67,7 +67,7 @@ async fn delete_webhook_handler(
     Auth(auth): Auth,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, AppError> {
-    engram_lib::webhooks::delete_webhook(&state.db, id, auth.user_id).await?;
+    kleos_lib::webhooks::delete_webhook(&state.db, id, auth.user_id).await?;
     Ok(Json(json!({ "deleted": true, "id": id })))
 }
 
@@ -77,19 +77,19 @@ async fn test_webhook_handler(
     Path(id): Path<i64>,
     Json(body): Json<TestWebhookBody>,
 ) -> Result<Json<Value>, AppError> {
-    let exists = engram_lib::webhooks::list_webhooks(&state.db, auth.user_id)
+    let exists = kleos_lib::webhooks::list_webhooks(&state.db, auth.user_id)
         .await?
         .into_iter()
         .any(|hook| hook.id == id);
     if !exists {
-        return Err(AppError(engram_lib::EngError::NotFound(format!(
+        return Err(AppError(kleos_lib::EngError::NotFound(format!(
             "webhook {} not found",
             id
         ))));
     }
     let event = body.event.as_deref().unwrap_or("test");
     let payload = json!({ "webhook_id": id, "test": true });
-    engram_lib::webhooks::emit_webhook_event(&state.db, event, &payload, auth.user_id).await;
+    kleos_lib::webhooks::emit_webhook_event(&state.db, event, &payload, auth.user_id).await;
     Ok(Json(json!({ "dispatched": true, "event": event })))
 }
 
@@ -100,7 +100,7 @@ async fn list_dead_letters_handler(
     Query(query): Query<DeadLetterQuery>,
 ) -> Result<Json<Value>, AppError> {
     let limit = query.limit.unwrap_or(50).min(200);
-    let items = engram_lib::webhooks::list_dead_letters(&state.db, id, auth.user_id, limit).await?;
+    let items = kleos_lib::webhooks::list_dead_letters(&state.db, id, auth.user_id, limit).await?;
     Ok(Json(
         json!({ "dead_letters": items, "count": items.len(), "webhook_id": id }),
     ))

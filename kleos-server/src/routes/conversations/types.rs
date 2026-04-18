@@ -1,4 +1,4 @@
-use engram_lib::conversations::AddMessageRequest;
+use kleos_lib::conversations::AddMessageRequest;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]

@@ -7,12 +7,12 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::auth::Scope;
-use engram_lib::skills::{
+use kleos_lib::auth::Scope;
+use kleos_lib::skills::{
     self, analyzer, cloud, dashboard, evolver, search::search_skills, CreateSkillRequest,
     UpdateSkillRequest,
 };
-use engram_lib::validation::MAX_PAGINATION_OFFSET;
+use kleos_lib::validation::MAX_PAGINATION_OFFSET;
 
 mod types;
 use types::{
@@ -25,7 +25,7 @@ use types::{
 fn clamp_limit(raw: Option<usize>, default: usize, max: usize) -> Result<usize, AppError> {
     match raw {
         None => Ok(default.min(max).max(1)),
-        Some(0) => Err(AppError::from(engram_lib::EngError::InvalidInput(
+        Some(0) => Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "limit must be >= 1".into(),
         ))),
         Some(n) => Ok(n.min(max)),
@@ -37,7 +37,7 @@ fn clamp_offset(raw: Option<usize>) -> Result<usize, AppError> {
     match raw {
         None => Ok(0),
         Some(n) if n > MAX_PAGINATION_OFFSET => {
-            Err(AppError::from(engram_lib::EngError::InvalidInput(format!(
+            Err(AppError::from(kleos_lib::EngError::InvalidInput(format!(
                 "offset must be <= {}",
                 MAX_PAGINATION_OFFSET
             ))))
@@ -493,13 +493,13 @@ async fn sync_skills_handler(
     // contents into the DB. Gate it to admin scope and enforce an env-driven
     // allowlist so a compromised read/write key cannot exfiltrate files.
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError(engram_lib::EngError::Auth(
+        return Err(AppError(kleos_lib::EngError::Auth(
             "admin scope required for skill sync".into(),
         )));
     }
     let allowlist = skill_sync_allowlist();
     if allowlist.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "skill sync disabled: set ENGRAM_SKILL_SYNC_PATHS to a colon-separated list of allowed roots".into(),
         )));
     }
@@ -582,14 +582,14 @@ async fn execute_skills_handler(
 ) -> Result<Json<Value>, AppError> {
     let task = body.task.trim();
     if task.is_empty() {
-        return Err(AppError::from(engram_lib::EngError::InvalidInput(
+        return Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "task is required".into(),
         )));
     }
 
     // Check if LLM is available
     let Some(ref llm) = state.llm else {
-        return Err(AppError::from(engram_lib::EngError::Internal(
+        return Err(AppError::from(kleos_lib::EngError::Internal(
             "No LLM configured".into(),
         )));
     };
@@ -623,7 +623,7 @@ async fn execute_skills_handler(
     let response = llm
         .call(&system, task, None)
         .await
-        .map_err(|e| AppError::from(engram_lib::EngError::Internal(e.to_string())))?;
+        .map_err(|e| AppError::from(kleos_lib::EngError::Internal(e.to_string())))?;
 
     Ok(Json(json!({
         "response": response,
@@ -639,7 +639,7 @@ async fn upload_skill_handler(
 ) -> Result<Json<Value>, AppError> {
     let skill_dir = body.skill_dir.trim();
     if skill_dir.is_empty() {
-        return Err(AppError::from(engram_lib::EngError::InvalidInput(
+        return Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "skill_dir is required".into(),
         )));
     }
@@ -656,7 +656,7 @@ async fn upload_skill_handler(
     let skill = skills_list.into_iter().find(|s| s.name == name);
 
     let Some(skill) = skill else {
-        return Err(AppError::from(engram_lib::EngError::NotFound(format!(
+        return Err(AppError::from(kleos_lib::EngError::NotFound(format!(
             "No skill found matching: {}. Run /skills/sync first.",
             skill_dir
         ))));

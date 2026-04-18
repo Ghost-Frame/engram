@@ -29,7 +29,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use engram_lib::pagination::PageMeta;
+use kleos_lib::pagination::PageMeta;
 use serde::Serialize;
 use serde_json::Value;
 

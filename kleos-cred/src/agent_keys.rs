@@ -1,7 +1,7 @@
 //! Agent key management with permission scoping and revocation.
 
-use engram_lib::db::Database;
-use engram_lib::EngError;
+use kleos_lib::db::Database;
+use kleos_lib::EngError;
 use rand::Rng;
 use rusqlite::params;
 

@@ -20,12 +20,12 @@ async fn pack_memories(
     let context = body.context.as_deref().unwrap_or("");
     let budget = body.token_budget.unwrap_or(4000).clamp(100, 128000);
     let format = match body.format.as_deref() {
-        Some("json") => engram_lib::pack::PackFormat::Json,
-        Some("xml") => engram_lib::pack::PackFormat::Xml,
-        _ => engram_lib::pack::PackFormat::Text,
+        Some("json") => kleos_lib::pack::PackFormat::Json,
+        Some("xml") => kleos_lib::pack::PackFormat::Xml,
+        _ => kleos_lib::pack::PackFormat::Text,
     };
     let result =
-        engram_lib::pack::pack_memories(&state.db, context, budget, format, auth.user_id).await?;
+        kleos_lib::pack::pack_memories(&state.db, context, budget, format, auth.user_id).await?;
     Ok(Json(json!({
         "packed": result.packed,
         "memories_included": result.memories_included,

@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::gate::{
+use kleos_lib::gate::{
     check_command_with_context, cleanup_expired_approvals, complete_gate, respond_to_gate,
     GateCheckRequest, PendingApproval, APPROVAL_TIMEOUT_SECS, TOOLS_REQUIRING_APPROVAL,
 };
@@ -118,7 +118,7 @@ async fn check_handler(
                     tool_name,
                     body.agent
                 );
-                let denied_result = engram_lib::gate::GateCheckResult {
+                let denied_result = kleos_lib::gate::GateCheckResult {
                     allowed: false,
                     reason: Some(format!(
                         "{} denied -- approval timed out or rejected",
@@ -185,7 +185,7 @@ async fn guard_handler(
     Json(body): Json<GuardBody>,
 ) -> Result<Json<Value>, AppError> {
     if body.action.trim().is_empty() {
-        return Err(AppError::from(engram_lib::EngError::InvalidInput(
+        return Err(AppError::from(kleos_lib::EngError::InvalidInput(
             "action (string) required - describe what you are about to do".into(),
         )));
     }

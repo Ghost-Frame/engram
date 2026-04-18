@@ -19,15 +19,15 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{HeaderName, HeaderValue, Request, StatusCode};
 use axum::Router;
-use engram_lib::config::Config;
-use engram_lib::db::Database;
+use kleos_lib::config::Config;
+use kleos_lib::db::Database;
 use serde_json::Value;
 use tokio::sync::{Mutex, RwLock};
 use tower::ServiceExt;
 
-use engram_lib::cred::CreddClient;
-use engram_server::server::build_router;
-use engram_server::state::AppState;
+use kleos_lib::cred::CreddClient;
+use kleos_server::server::build_router;
+use kleos_server::state::AppState;
 
 /// Build a test router, AppState and in-memory SQLite database.
 ///

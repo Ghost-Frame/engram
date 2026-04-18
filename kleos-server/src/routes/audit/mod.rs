@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use crate::error::AppError;
 use crate::extractors::Auth;
 use crate::state::AppState;
-use engram_lib::audit::{count_audit_entries, list_audit_entries};
+use kleos_lib::audit::{count_audit_entries, list_audit_entries};
 
 mod types;
 use types::AuditQueryParams;

@@ -4,8 +4,8 @@
 //! with two-tier authentication (master key vs agent keys).
 
 use clap::Parser;
-use engram_credd::server;
-use engram_lib::config::{Config, EncryptionMode};
+use kleos_credd::server;
+use kleos_lib::config::{Config, EncryptionMode};
 use tracing::info;
 
 #[derive(Parser)]
@@ -27,11 +27,11 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    engram_lib::config::migrate_env_prefix();
+    kleos_lib::config::migrate_env_prefix();
 
-    let _otel_guard = engram_lib::observability::init_tracing(
+    let _otel_guard = kleos_lib::observability::init_tracing(
         "engram-credd",
-        "engram_credd=info,tower_http=debug",
+        "kleos_credd=info,tower_http=debug",
     );
 
     let args = Args::parse();
@@ -51,16 +51,16 @@ async fn main() -> anyhow::Result<()> {
         EncryptionMode::None => None,
         EncryptionMode::Yubikey => {
             info!("encryption mode: yubikey -- touch slot 2 to unlock database...");
-            let challenge = engram_cred::yubikey::get_or_create_challenge()
+            let challenge = kleos_cred::yubikey::get_or_create_challenge()
                 .map_err(|e| anyhow::anyhow!("YubiKey challenge: {e}"))?;
-            let response = engram_cred::yubikey::challenge_response(&challenge)
+            let response = kleos_cred::yubikey::challenge_response(&challenge)
                 .map_err(|e| anyhow::anyhow!("YubiKey response: {e}"))?;
-            Some(engram_cred::crypto::derive_key(0, b"", Some(&response)))
+            Some(kleos_cred::crypto::derive_key(0, b"", Some(&response)))
         }
         _ => {
             let mode_name = format!("{:?}", enc_config.encryption.mode).to_ascii_lowercase();
             info!("encryption mode: {}", mode_name);
-            engram_lib::encryption::resolve_key(&enc_config)
+            kleos_lib::encryption::resolve_key(&enc_config)
                 .map_err(|e| anyhow::anyhow!("encryption key: {e}"))?
         }
     };

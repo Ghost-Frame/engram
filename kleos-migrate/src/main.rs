@@ -32,10 +32,10 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    engram_lib::config::migrate_env_prefix();
+    kleos_lib::config::migrate_env_prefix();
 
     let _otel_guard =
-        engram_lib::observability::init_tracing("engram-migrate", "engram_migrate=info");
+        kleos_lib::observability::init_tracing("engram-migrate", "kleos_migrate=info");
 
     let args = Args::parse();
 

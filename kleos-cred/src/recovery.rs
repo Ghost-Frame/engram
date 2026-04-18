@@ -10,8 +10,8 @@ use rusqlite::params;
 use crate::crypto::{decrypt_secret, encrypt_secret, KEY_SIZE};
 use crate::types::SecretData;
 use crate::{CredError, Result};
-use engram_lib::db::Database;
-use engram_lib::EngError;
+use kleos_lib::db::Database;
+use kleos_lib::EngError;
 
 /// Recovery key length (256 bits = 32 bytes, displayed as 64 hex chars).
 pub const RECOVERY_KEY_SIZE: usize = 32;

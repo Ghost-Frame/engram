@@ -16,12 +16,12 @@
 //!   --user-id <id>    Benchmark user id (default: 1)
 //!   -h, --help        Show help
 
-use engram_lib::db::Database;
-use engram_lib::graph::pagerank::{compute_pagerank_for_user, persist_pagerank};
-use engram_lib::memory;
-use engram_lib::memory::fts::fts_search;
-use engram_lib::memory::search::hybrid_search;
-use engram_lib::memory::types::{QuestionType, SearchRequest, StoreRequest};
+use kleos_lib::db::Database;
+use kleos_lib::graph::pagerank::{compute_pagerank_for_user, persist_pagerank};
+use kleos_lib::memory;
+use kleos_lib::memory::fts::fts_search;
+use kleos_lib::memory::search::hybrid_search;
+use kleos_lib::memory::types::{QuestionType, SearchRequest, StoreRequest};
 use std::cmp::min;
 use std::hint::black_box;
 use std::time::{Duration, Instant};
@@ -242,7 +242,7 @@ fn search_request(args: &Args) -> SearchRequest {
 async fn bench_store_throughput(
     db: &Database,
     args: &Args,
-) -> engram_lib::Result<(Vec<i64>, Duration)> {
+) -> kleos_lib::Result<(Vec<i64>, Duration)> {
     let mut ids = Vec::with_capacity(args.memories);
     let start = Instant::now();
     for i in 0..args.memories {
@@ -261,7 +261,7 @@ async fn bench_link_insertion(
     db: &Database,
     ids: &[i64],
     args: &Args,
-) -> engram_lib::Result<(usize, Duration)> {
+) -> kleos_lib::Result<(usize, Duration)> {
     let start = Instant::now();
     let mut edges = 0usize;
 
@@ -290,7 +290,7 @@ async fn bench_link_insertion(
 }
 
 /// 3. FTS search latency
-async fn bench_fts_search(db: &Database, args: &Args) -> engram_lib::Result<Vec<Duration>> {
+async fn bench_fts_search(db: &Database, args: &Args) -> kleos_lib::Result<Vec<Duration>> {
     let queries = &[
         "server deployment config",
         "database migration schema",
@@ -314,7 +314,7 @@ async fn bench_fts_search(db: &Database, args: &Args) -> engram_lib::Result<Vec<
 }
 
 /// 4. Hybrid search (FTS-only, no embeddings)
-async fn bench_hybrid_search(db: &Database, args: &Args) -> engram_lib::Result<Vec<Duration>> {
+async fn bench_hybrid_search(db: &Database, args: &Args) -> kleos_lib::Result<Vec<Duration>> {
     let queries = &[
         "server deployment config",
         "database migration schema",
@@ -336,7 +336,7 @@ async fn bench_hybrid_search(db: &Database, args: &Args) -> engram_lib::Result<V
 }
 
 /// 5. Hybrid search with include_links=true (exercises the N+1 path)
-async fn bench_hybrid_with_links(db: &Database, args: &Args) -> engram_lib::Result<Vec<Duration>> {
+async fn bench_hybrid_with_links(db: &Database, args: &Args) -> kleos_lib::Result<Vec<Duration>> {
     let mut samples = Vec::with_capacity(args.samples);
     for _ in 0..args.samples {
         let mut req = search_request(args);
@@ -354,7 +354,7 @@ async fn bench_hydration(
     db: &Database,
     ids: &[i64],
     args: &Args,
-) -> engram_lib::Result<Vec<Duration>> {
+) -> kleos_lib::Result<Vec<Duration>> {
     let batch_size = args.limit;
     let mut samples = Vec::with_capacity(args.samples);
     for i in 0..args.samples {
@@ -375,7 +375,7 @@ async fn bench_graph_neighbors(
     db: &Database,
     ids: &[i64],
     args: &Args,
-) -> engram_lib::Result<Vec<Duration>> {
+) -> kleos_lib::Result<Vec<Duration>> {
     let mut samples = Vec::with_capacity(args.samples);
     for i in 0..args.samples {
         let seed = ids[i % ids.len()];
@@ -388,7 +388,7 @@ async fn bench_graph_neighbors(
 }
 
 /// 8. PageRank computation
-async fn bench_pagerank(db: &Database, args: &Args) -> engram_lib::Result<Vec<Duration>> {
+async fn bench_pagerank(db: &Database, args: &Args) -> kleos_lib::Result<Vec<Duration>> {
     let cap = args.samples.min(5); // PageRank is expensive, cap iterations
     let mut samples = Vec::with_capacity(cap);
     let user_id = args.user_id;
@@ -399,12 +399,12 @@ async fn bench_pagerank(db: &Database, args: &Args) -> engram_lib::Result<Vec<Du
                 "DELETE FROM memory_pagerank WHERE user_id = ?1",
                 rusqlite::params![user_id],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             conn.execute(
                 "DELETE FROM pagerank_dirty WHERE user_id = ?1",
                 rusqlite::params![user_id],
             )
-            .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+            .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
             Ok(())
         })
         .await?;
@@ -423,7 +423,7 @@ async fn bench_single_get(
     db: &Database,
     ids: &[i64],
     args: &Args,
-) -> engram_lib::Result<Vec<Duration>> {
+) -> kleos_lib::Result<Vec<Duration>> {
     let mut samples = Vec::with_capacity(args.samples);
     for i in 0..args.samples {
         let id = ids[i % ids.len()];

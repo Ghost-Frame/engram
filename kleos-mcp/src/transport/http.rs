@@ -10,7 +10,7 @@ use axum::{
     routing::post,
     Json, Router,
 };
-use engram_lib::{EngError, Result};
+use kleos_lib::{EngError, Result};
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -90,7 +90,7 @@ async fn preauth_rate_limit(
         .map(|ci| format!("mcp:http:{}", ci.0.ip()))
         .unwrap_or_else(|| "mcp:http:unknown".to_string());
 
-    match engram_lib::ratelimit::check_and_increment(&app.db, &key, PREAUTH_IP_LIMIT, 60).await {
+    match kleos_lib::ratelimit::check_and_increment(&app.db, &key, PREAUTH_IP_LIMIT, 60).await {
         Ok(true) => next.run(request).await,
         Ok(false) => (
             StatusCode::TOO_MANY_REQUESTS,

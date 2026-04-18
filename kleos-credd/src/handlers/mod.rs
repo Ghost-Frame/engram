@@ -10,7 +10,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde_json::json;
 
-use engram_cred::CredError;
+use kleos_cred::CredError;
 
 /// Convert CredError to HTTP response.
 pub struct AppError(CredError);

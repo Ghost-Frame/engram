@@ -8,10 +8,10 @@ use axum::{
 };
 use serde_json::{json, Value};
 
-use engram_cred::agent_keys::{
+use kleos_cred::agent_keys::{
     create_agent_key, delete_agent_key, list_agent_keys, revoke_agent_key, AgentKeyPermissions,
 };
-use engram_cred::CredError;
+use kleos_cred::CredError;
 
 use crate::auth::Auth;
 use crate::handlers::AppError;

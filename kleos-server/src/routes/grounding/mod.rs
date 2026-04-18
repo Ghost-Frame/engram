@@ -7,8 +7,8 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use engram_lib::auth::Scope;
-use engram_lib::grounding::{BackendType, GroundingClient, SessionConfig};
+use kleos_lib::auth::Scope;
+use kleos_lib::grounding::{BackendType, GroundingClient, SessionConfig};
 use serde_json::{json, Value};
 use tokio::sync::RwLock;
 
@@ -139,7 +139,7 @@ async fn get_session(Auth(auth): Auth, Path(id): Path<String>) -> Result<Json<Va
             .map(|s| serde_json::to_value(s).unwrap_or(json!({})))
     })
     .await
-    .ok_or_else(|| AppError(engram_lib::EngError::NotFound("Session not found".into())))?;
+    .ok_or_else(|| AppError(kleos_lib::EngError::NotFound("Session not found".into())))?;
     Ok(Json(session_json))
 }
 
@@ -157,7 +157,7 @@ async fn destroy_session(
     })
     .await;
     if !existed {
-        return Err(AppError(engram_lib::EngError::NotFound(
+        return Err(AppError(kleos_lib::EngError::NotFound(
             "Session not found".into(),
         )));
     }
@@ -189,13 +189,13 @@ async fn execute_tool(
     // read/write, etc). Restrict to admin-scoped callers so a leaked read/write
     // key cannot become RCE on the API host.
     if !auth.has_scope(&Scope::Admin) {
-        return Err(AppError::from(engram_lib::EngError::Auth(
+        return Err(AppError::from(kleos_lib::EngError::Auth(
             "admin scope required for grounding execution".into(),
         )));
     }
     let tool_name = body.tool.trim();
     if tool_name.is_empty() {
-        return Err(AppError(engram_lib::EngError::InvalidInput(
+        return Err(AppError(kleos_lib::EngError::InvalidInput(
             "tool is required".into(),
         )));
     }
@@ -216,7 +216,7 @@ async fn execute_tool(
         }
         let guard = tenants().read().await;
         let lock = guard.get(&auth.user_id).ok_or_else(|| {
-            AppError(engram_lib::EngError::Internal(
+            AppError(kleos_lib::EngError::Internal(
                 "tenant grounding client not initialized".into(),
             ))
         })?;
@@ -234,13 +234,13 @@ async fn get_quality(
     let limit = params.limit.unwrap_or(50).min(200);
     let degraded_only = params.degraded.as_deref() == Some("true");
 
-    let qm = engram_lib::grounding::ToolQualityManager::new(None);
+    let qm = kleos_lib::grounding::ToolQualityManager::new(None);
 
     if degraded_only {
         let tools = qm
             .get_degraded_tools(&state.db)
             .await
-            .map_err(|e| AppError(engram_lib::EngError::Internal(e.to_string())))?;
+            .map_err(|e| AppError(kleos_lib::EngError::Internal(e.to_string())))?;
         let records: Vec<Value> = tools
             .iter()
             .map(|(name, score)| json!({ "tool_name": name, "quality_score": score }))
@@ -251,7 +251,7 @@ async fn get_quality(
         let records = qm
             .get_all_records(&state.db, limit as i64)
             .await
-            .map_err(|e| AppError(engram_lib::EngError::Internal(e.to_string())))?;
+            .map_err(|e| AppError(kleos_lib::EngError::Internal(e.to_string())))?;
         let count = records.len();
         Ok(Json(json!({ "records": records, "count": count })))
     }

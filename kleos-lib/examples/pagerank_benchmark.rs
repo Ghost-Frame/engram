@@ -1,8 +1,8 @@
-use engram_lib::db::Database;
-use engram_lib::graph::pagerank::{compute_pagerank_for_user, persist_pagerank};
-use engram_lib::memory;
-use engram_lib::memory::search::hybrid_search;
-use engram_lib::memory::types::{QuestionType, SearchRequest, StoreRequest};
+use kleos_lib::db::Database;
+use kleos_lib::graph::pagerank::{compute_pagerank_for_user, persist_pagerank};
+use kleos_lib::memory;
+use kleos_lib::memory::search::hybrid_search;
+use kleos_lib::memory::types::{QuestionType, SearchRequest, StoreRequest};
 use std::cmp::min;
 use std::hint::black_box;
 use std::time::{Duration, Instant};
@@ -132,7 +132,7 @@ fn search_request(args: &Args) -> SearchRequest {
     }
 }
 
-async fn build_dataset(db: &Database, args: &Args) -> engram_lib::Result<(usize, usize)> {
+async fn build_dataset(db: &Database, args: &Args) -> kleos_lib::Result<(usize, usize)> {
     let mut ids = Vec::with_capacity(args.memories);
 
     for i in 0..args.memories {
@@ -176,44 +176,44 @@ async fn build_dataset(db: &Database, args: &Args) -> engram_lib::Result<(usize,
     Ok((ids.len(), edges))
 }
 
-async fn clear_pagerank_cache(db: &Database, user_id: i64) -> engram_lib::Result<()> {
+async fn clear_pagerank_cache(db: &Database, user_id: i64) -> kleos_lib::Result<()> {
     db.write(move |conn| {
         conn.execute(
             "DELETE FROM memory_pagerank WHERE user_id = ?1",
             rusqlite::params![user_id],
         )
-        .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+        .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
         conn.execute(
             "DELETE FROM pagerank_dirty WHERE user_id = ?1",
             rusqlite::params![user_id],
         )
-        .map_err(|e| engram_lib::EngError::DatabaseMessage(e.to_string()))?;
+        .map_err(|e| kleos_lib::EngError::DatabaseMessage(e.to_string()))?;
         Ok(())
     })
     .await
 }
 
-async fn warm_pagerank_cache(db: &Database, user_id: i64) -> engram_lib::Result<usize> {
+async fn warm_pagerank_cache(db: &Database, user_id: i64) -> kleos_lib::Result<usize> {
     let scores = compute_pagerank_for_user(db, user_id).await?;
     let count = scores.len();
     persist_pagerank(db, user_id, &scores).await?;
     Ok(count)
 }
 
-async fn timed_search(db: &Database, args: &Args) -> engram_lib::Result<Duration> {
+async fn timed_search(db: &Database, args: &Args) -> kleos_lib::Result<Duration> {
     let request = search_request(args);
     let started = Instant::now();
     let results = hybrid_search(db, request).await?;
     black_box(results.len());
     if results.is_empty() {
-        return Err(engram_lib::EngError::Internal(
+        return Err(kleos_lib::EngError::Internal(
             "benchmark search returned no results".to_string(),
         ));
     }
     Ok(started.elapsed())
 }
 
-async fn measure_cold_searches(db: &Database, args: &Args) -> engram_lib::Result<Vec<Duration>> {
+async fn measure_cold_searches(db: &Database, args: &Args) -> kleos_lib::Result<Vec<Duration>> {
     let mut samples = Vec::with_capacity(args.samples);
     for _ in 0..args.samples {
         clear_pagerank_cache(db, args.user_id).await?;
@@ -222,7 +222,7 @@ async fn measure_cold_searches(db: &Database, args: &Args) -> engram_lib::Result
     Ok(samples)
 }
 
-async fn measure_warm_searches(db: &Database, args: &Args) -> engram_lib::Result<Vec<Duration>> {
+async fn measure_warm_searches(db: &Database, args: &Args) -> kleos_lib::Result<Vec<Duration>> {
     warm_pagerank_cache(db, args.user_id).await?;
     let mut samples = Vec::with_capacity(args.samples);
     for _ in 0..args.samples {

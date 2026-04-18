@@ -8,5 +8,5 @@ pub(super) struct SyncQuery {
 
 #[derive(Deserialize)]
 pub(super) struct SyncReceiveBody {
-    pub changes: Vec<engram_lib::sync::SyncReceiveChange>,
+    pub changes: Vec<kleos_lib::sync::SyncReceiveChange>,
 }
