@@ -1,6 +1,58 @@
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 
+/// Shim: for every `KLEOS_X` env var found, set `ENGRAM_X` if not already set.
+///
+/// Call this once at binary startup (before any config loading) so that the
+/// new `KLEOS_*` prefix works transparently alongside existing `ENGRAM_*` vars.
+pub fn migrate_env_prefix() {
+    let pairs: Vec<(String, String)> = std::env::vars()
+        .filter_map(|(k, v)| {
+            k.strip_prefix("KLEOS_").map(|suffix| {
+                (format!("ENGRAM_{}", suffix), v)
+            })
+        })
+        .collect();
+
+    for (engram_key, value) in pairs {
+        if std::env::var(&engram_key).is_err() {
+            std::env::set_var(&engram_key, &value);
+        }
+    }
+}
+
+/// Resolve the actual DB path to open, applying a legacy fallback.
+///
+/// Rules:
+/// 1. If `configured` path exists on disk, use it as-is.
+/// 2. If `configured` filename is `kleos.db` and that file does NOT exist,
+///    check whether `engram.db` in the same directory exists. If so, warn and
+///    return that legacy path so existing deployments keep working without
+///    renaming anything.
+/// 3. Otherwise return `configured` unchanged (the caller will create it).
+pub fn resolve_db_path(configured: &std::path::Path) -> std::path::PathBuf {
+    if configured.exists() {
+        return configured.to_path_buf();
+    }
+
+    // Only attempt legacy fallback when the configured name is kleos.db.
+    if configured.file_name().and_then(|n| n.to_str()) == Some("kleos.db") {
+        let legacy = configured
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .join("engram.db");
+        if legacy.exists() {
+            tracing::warn!(
+                legacy = %legacy.display(),
+                "kleos.db not found -- falling back to legacy engram.db"
+            );
+            return legacy;
+        }
+    }
+
+    configured.to_path_buf()
+}
+
 /// How the at-rest encryption key is sourced.
 ///
 /// Default is `None` (no encryption). When set, every SQLite connection
@@ -378,7 +430,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            db_path: "engram.db".to_string(),
+            db_path: "kleos.db".to_string(),
             host: "127.0.0.1".to_string(),
             port: 4200,
             api_key: None,
@@ -830,7 +882,7 @@ default_max_tokens = 8000
         assert_eq!(c.port, 8080);
         assert!(!c.pagerank_enabled);
         // unspecified fields fall back to defaults
-        assert_eq!(c.db_path, "engram.db");
+        assert_eq!(c.db_path, "kleos.db");
         assert_eq!(c.embedding_dim, 1024);
         assert!(c.eidolon.enabled);
         assert_eq!(c.eidolon.prompt.default_max_tokens, 8000);

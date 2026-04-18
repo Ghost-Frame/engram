@@ -17,7 +17,7 @@ struct Args {
     listen: String,
 
     /// Database path
-    #[arg(long, default_value = "engram.db", env = "CREDD_DB_PATH")]
+    #[arg(long, default_value = "kleos.db", env = "CREDD_DB_PATH")]
     db_path: String,
 
     /// Master password (from stdin if not provided)
@@ -27,6 +27,8 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    engram_lib::config::migrate_env_prefix();
+
     let _otel_guard = engram_lib::observability::init_tracing(
         "engram-credd",
         "engram_credd=info,tower_http=debug",

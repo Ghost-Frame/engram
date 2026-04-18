@@ -20,6 +20,8 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[tokio::main]
 async fn main() {
+    engram_lib::config::migrate_env_prefix();
+
     let _otel_guard = engram_lib::observability::init_tracing(
         "engram-server",
         "engram_server=debug,tower_http=debug",
