@@ -2,7 +2,7 @@
 
 # =============================================================================
 # Stage 1 -- builder
-# Compiles engram-server and engram-cli in release mode.
+# Compiles kleos-server and kleos-cli in release mode.
 # SQLCipher is vendored at compile time via the "sqlcipher" feature so no
 # system libsqlcipher is needed at runtime.
 # =============================================================================
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . .
 
 # Build only the two required binaries; the rest of the workspace is skipped.
-RUN cargo build --release -p engram-server -p engram-cli
+RUN cargo build --release -p kleos-server -p kleos-cli
 
 # =============================================================================
 # Stage 2 -- runtime
@@ -32,7 +32,7 @@ RUN cargo build --release -p engram-server -p engram-cli
 FROM debian:bookworm-slim AS runtime
 
 LABEL org.opencontainers.image.source="https://github.com/Ghost-Frame/Engram" \
-      org.opencontainers.image.description="Engram memory server -- personal knowledge graph and semantic memory store" \
+      org.opencontainers.image.description="Kleos memory server (formerly Engram) -- personal knowledge graph and semantic memory store" \
       org.opencontainers.image.licenses="Elastic-2.0"
 
 # Install runtime dependencies:
@@ -44,26 +44,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a dedicated non-root user for running the server.
-RUN groupadd --system --gid 1000 engram \
-    && useradd --system --uid 1000 --gid engram --no-create-home --shell /sbin/nologin engram
+RUN groupadd --system --gid 1000 kleos \
+    && useradd --system --uid 1000 --gid kleos --no-create-home --shell /sbin/nologin kleos
 
 # Persistent data lives here.  A named volume or bind-mount should be attached.
-RUN mkdir -p /data && chown engram:engram /data
+RUN mkdir -p /data && chown kleos:kleos /data
 
-COPY --from=builder /build/target/release/engram-server /usr/local/bin/engram-server
-COPY --from=builder /build/target/release/engram-cli     /usr/local/bin/engram-cli
+COPY --from=builder /build/target/release/kleos-server /usr/local/bin/kleos-server
+COPY --from=builder /build/target/release/kleos-cli     /usr/local/bin/kleos-cli
 
-RUN chmod 755 /usr/local/bin/engram-server /usr/local/bin/engram-cli
+RUN chmod 755 /usr/local/bin/kleos-server /usr/local/bin/kleos-cli
 
-USER engram
+# Legacy aliases for backward compatibility.
+RUN ln -s /usr/local/bin/kleos-server /usr/local/bin/engram-server \
+    && ln -s /usr/local/bin/kleos-cli /usr/local/bin/engram-cli
+
+USER kleos
 
 # Environment -- bind to all interfaces inside the container.
-ENV ENGRAM_HOST=0.0.0.0
-ENV ENGRAM_DATA_DIR=/data
-ENV ENGRAM_DB_PATH=/data/engram.db
+# KLEOS_* vars are preferred. The env shim falls back to ENGRAM_* automatically.
+ENV KLEOS_HOST=0.0.0.0
+ENV KLEOS_DATA_DIR=/data
+ENV KLEOS_DB_PATH=/data/kleos.db
 
 VOLUME ["/data"]
 
 EXPOSE 4200
 
-CMD ["/usr/local/bin/engram-server"]
+CMD ["/usr/local/bin/kleos-server"]
