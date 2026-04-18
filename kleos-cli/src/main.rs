@@ -83,7 +83,7 @@ enum Commands {
     /// Bootstrap the database schema
     Bootstrap {
         /// Database path
-        #[arg(short, long, default_value = "engram.db")]
+        #[arg(short, long, default_value = "kleos.db")]
         db: String,
     },
     /// Credential management (talks to credd)
@@ -235,6 +235,8 @@ fn value_as_string(value: Option<&Value>) -> Option<String> {
 
 #[tokio::main]
 async fn main() {
+    engram_lib::config::migrate_env_prefix();
+
     let _otel_guard = engram_lib::observability::init_tracing("engram-cli", "warn");
 
     let cli = Cli::parse();
