@@ -31,25 +31,25 @@ jobs:
       # runs out of memory at link time (exit 143 / SIGKILL). Splitting
       # into staged invocations keeps peak memory well under the limit
       # while still benefiting from the shared incremental cache.
-      - name: Build engram-server
+      - name: Build kleos-server
         env:
           CARGO_BUILD_JOBS: "2"
-        run: cargo build --release -p engram-server
+        run: cargo build --release -p kleos-server
 
-      - name: Build engram-cli and engram-sidecar
+      - name: Build kleos-cli and kleos-sidecar
         env:
           CARGO_BUILD_JOBS: "2"
-        run: cargo build --release -p engram-cli -p engram-sidecar
+        run: cargo build --release -p kleos-cli -p kleos-sidecar
 
-      - name: Build engram-credd, engram-cred, engram-mcp
+      - name: Build kleos-credd, kleos-cred, kleos-mcp
         env:
           CARGO_BUILD_JOBS: "2"
-        run: cargo build --release -p engram-credd -p engram-cred -p engram-mcp
+        run: cargo build --release -p kleos-credd -p kleos-cred -p kleos-mcp
 
       - name: Collect binaries
         run: |
           mkdir -p release-artifacts
-          for bin in engram-server engram-cli engram-sidecar engram-credd engram-cred engram-mcp; do
+          for bin in kleos-server kleos-cli kleos-sidecar kleos-credd kleos-cred kleos-mcp; do
             if [ -f target/release/$bin ]; then
               cp target/release/$bin release-artifacts/${bin}-linux-x64
             fi
@@ -91,16 +91,28 @@ jobs:
         id: tag
         run: echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (ghostframe/kleos)
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: |
-            ghostframe/engram:latest
-            ghostframe/engram:${{ steps.tag.outputs.TAG }}
+            ghostframe/kleos:latest
+            ghostframe/kleos:${{ steps.tag.outputs.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Transition release: also push ghostframe/engram for one release so
+      # existing deployments pinned to ghostframe/engram continue to work.
+      # Remove this step after the transition period.
+      - name: Tag and push legacy ghostframe/engram image
+        run: |
+          VERSION="${{ steps.tag.outputs.TAG }}"
+          docker pull ghostframe/kleos:${VERSION}
+          docker tag ghostframe/kleos:${VERSION} ghostframe/engram:${VERSION}
+          docker tag ghostframe/kleos:${VERSION} ghostframe/engram:latest
+          docker push ghostframe/engram:${VERSION}
+          docker push ghostframe/engram:latest
 
   publish-crates:
     permissions:
@@ -144,16 +156,13 @@ jobs:
               return 1
             fi
           }
-          # Only engram-lib and engram-cred publish to crates.io. The
-          # names engram-server, engram-cli, and engram-mcp are held by
-          # third-party squatters (see crates.io/crates/engram-server
-          # owner federicorinaldi, engram-mcp owner edg-l) whose
-          # publications postdate the original TypeScript Engram but
-          # preempt this Rust rewrite in the registry. Binaries ship
-          # through Docker Hub and the GitHub release artifacts instead.
-          publish engram-lib
+          # Publishing kleos-lib and kleos-cred to crates.io.
+          # The legacy engram-lib and engram-cred crates remain at 0.3.1
+          # as the last published versions under those names. New consumers
+          # should use kleos-lib and kleos-cred going forward.
+          publish kleos-lib
           sleep 30
-          publish engram-cred
+          publish kleos-cred
 
   publish-npm:
     permissions:
@@ -174,7 +183,7 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Build and publish TypeScript SDK
+      - name: Build and publish TypeScript SDK (@ghost_frame/kleos)
         working-directory: sdk/typescript
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,8 +1,10 @@
 <div align="center">
 
-# Engram
+# Kleos
 
 **Persistent memory and cognitive infrastructure for AI agents. Written in Rust.**
+
+> Formerly known as **engram-rust**. Renamed to Kleos (kleos = Greek for "renown" / "what is remembered").
 
 [![License](https://img.shields.io/badge/License-Elastic--2.0-blue.svg)](LICENSE) [![Rust](https://img.shields.io/badge/rust-1.94%2B-orange.svg)](https://www.rust-lang.org) [![Workspace](https://img.shields.io/badge/workspace-10%20crates-brightgreen.svg)](Cargo.toml)
 
@@ -22,7 +24,7 @@ The original Node.js server worked, but keeping it fast under load was a constan
 
 This is the ground-up Rust rewrite. Same cognitive model, same API surface, same data format. Different runtime.
 
-- **Single static binary.** `cargo build --release` gives you one file. No Node, no `node_modules`, no flags.
+- **Single static binary.** `cargo build --release` gives you one file. No Node, no `node_modules`, no flags. The primary binary is `kleos-server`; `engram-server` is a symlink alias in the Docker image.
 - **Tokio + Axum.** Async from the socket down to SQLite. Thousands of concurrent agent requests on a small VPS.
 - **In-process ONNX.** `ort` runs embeddings and the cross-encoder reranker inside the server process. No Python, no worker threads, no sidecar model server.
 - **SQLite + LanceDB.** rusqlite (with optional SQLCipher) holds relational memory and FTS5. LanceDB holds the vector index once the corpus outgrows memory.
@@ -37,14 +39,16 @@ One binary. One SQLite database. Local embeddings. No cloud keys required. Your 
 ```bash
 git clone https://github.com/Ghost-Frame/Engram.git && cd Engram
 cargo build --release
-./target/release/engram-server
+./target/release/kleos-server
 ```
+
+> Note: the repository will be renamed to `kleos-rust` in a future step. The clone URL above reflects the current name.
 
 Server binds to `127.0.0.1:4200` by default. Set a bootstrap secret, start the server, then claim the admin key:
 
 ```bash
 # Start the server with a bootstrap secret
-ENGRAM_BOOTSTRAP_SECRET=my-setup-secret ./target/release/engram-server
+KLEOS_BOOTSTRAP_SECRET=my-setup-secret ./target/release/kleos-server
 
 # Bootstrap the admin key (one-time only)
 curl -X POST http://localhost:4200/bootstrap \
@@ -67,7 +71,7 @@ curl -X POST http://localhost:4200/search \
 MCP stdio entrypoint:
 
 ```bash
-ENGRAM_MCP_BEARER_TOKEN=eg_... cargo run -p engram-mcp
+KLEOS_MCP_BEARER_TOKEN=eg_... cargo run -p kleos-mcp
 ```
 
 ---
@@ -115,11 +119,11 @@ ENGRAM_MCP_BEARER_TOKEN=eg_... cargo run -p engram-mcp
 
 ### Developer Platform
 - **REST API**: 80+ endpoints across 46 route modules
-- **Rust CLI**: `engram-cli` for store, search, context, recall, list, bootstrap, and credential management
-- **MCP Server**: `engram-mcp` for LLM tool integration via Model Context Protocol (stdio; HTTP behind feature flag). 57+ tools across memory, context, graph, intelligence, services, structural, skills, and admin.
-- **Sidecar**: `engram-sidecar` for session-scoped agent runs with batched observation flushing
-- **Credential Manager**: `engram-cred` library + `engram-credd` daemon for encrypted credential vault with YubiKey and agent key support
-- **Client SDKs**: TypeScript (`sdk/typescript/`, `@engram/sdk`), Python (`sdk/python/`, Pydantic v2 + httpx), Go (`sdk/go/`, stdlib-only)
+- **Rust CLI**: `kleos-cli` for store, search, context, recall, list, bootstrap, and credential management
+- **MCP Server**: `kleos-mcp` for LLM tool integration via Model Context Protocol (stdio; HTTP behind feature flag). 57+ tools across memory, context, graph, intelligence, services, structural, skills, and admin.
+- **Sidecar**: `kleos-sidecar` for session-scoped agent runs with batched observation flushing
+- **Credential Manager**: `kleos-cred` library + `kleos-credd` daemon for encrypted credential vault with YubiKey and agent key support
+- **Client SDKs**: TypeScript (`sdk/typescript/`, `@ghost_frame/kleos`), Python (`sdk/python/`, Pydantic v2 + httpx), Go (`sdk/go/`, stdlib-only)
 - **Multi-Tenant + RBAC**: isolated memory per user, role-based access, quota enforcement
 - **Webhooks & Digests**: event hooks and scheduled digests
 - **Audit Trail**: every mutation logged with who, what, when, from where
@@ -160,15 +164,15 @@ Ten Cargo crates:
 
 | Crate | Role |
 |-------|------|
-| `engram-lib` | Core library. Memory, search, embeddings, graph, intelligence, services, auth, jobs, 50+ modules. |
-| `engram-server` | Axum HTTP server. 46 route modules, middleware (auth, rate limiting, safe mode, JSON depth, metrics), GUI. |
-| `engram-cli` | Command-line client over the HTTP API. Memory ops and credential management via credd. |
-| `engram-sidecar` | Session-scoped memory proxy with file watcher, batched observation flushing, and persistent session store. |
-| `engram-mcp` | MCP (Model Context Protocol) server. 57+ tools across memory, context, graph, intelligence, services, structural, skills, and admin. Stdio transport; HTTP behind feature flag. |
-| `engram-cred` | Credential management library. Crypto primitives, YubiKey challenge-response, key derivation. |
-| `engram-credd` | Credential management daemon. HTTP server with master key + agent key two-tier auth, ChaCha20-Poly1305 encryption. |
-| `engram-approval-tui` | Terminal UI for human approval workflow. Ratatui-based interactive review queue. (WIP) |
-| `engram-migrate` | ETL tool for migrating from libsql to rusqlite + LanceDB. One-shot utility. |
+| `kleos-lib` | Core library. Memory, search, embeddings, graph, intelligence, services, auth, jobs, 50+ modules. Previously published as `engram-lib` (last: 0.3.1). |
+| `kleos-server` | Axum HTTP server. 46 route modules, middleware (auth, rate limiting, safe mode, JSON depth, metrics), GUI. |
+| `kleos-cli` | Command-line client over the HTTP API. Memory ops and credential management via credd. |
+| `kleos-sidecar` | Session-scoped memory proxy with file watcher, batched observation flushing, and persistent session store. |
+| `kleos-mcp` | MCP (Model Context Protocol) server. 57+ tools across memory, context, graph, intelligence, services, structural, skills, and admin. Stdio transport; HTTP behind feature flag. |
+| `kleos-cred` | Credential management library. Crypto primitives, YubiKey challenge-response, key derivation. Previously published as `engram-cred` (last: 0.3.1). |
+| `kleos-credd` | Credential management daemon. HTTP server with master key + agent key two-tier auth, ChaCha20-Poly1305 encryption. |
+| `kleos-approval-tui` | Terminal UI for human approval workflow. Ratatui-based interactive review queue. (WIP) |
+| `kleos-migrate` | ETL tool for migrating from libsql to rusqlite + LanceDB. One-shot utility. |
 | `agent-forge` | Structured reasoning CLI: spec-task, consider-approaches, log-hypothesis, log-outcome, recall-errors, verify, challenge-code, checkpoint, rollback, session-learn, session-recall, session-diff, think, declare-unknowns, repo-map, search-code. Tree-sitter AST parsing. |
 
 ```bash
@@ -265,7 +269,7 @@ curl -X POST http://localhost:4200/admin/safe-mode/exit \
 
 ```
 +---------------------------------------------------------+
-|                  engram-server (Axum)                    |
+|                  kleos-server (Axum)                     |
 |                                                         |
 |  +----------+  +----------+  +----------+               |
 |  |  FSRS-6  |  |   RRF    |  |  FTS5    |               |
@@ -385,7 +389,7 @@ Every endpoint needs `Authorization: Bearer eg_...` unless the server runs with 
 | `GET` | `/metrics` | Prometheus metrics |
 | `GET` | `/openapi.json` | OpenAPI 3.1 spec |
 
-The full endpoint list (activity, agents, approvals, artifacts, auth_keys, batch, conversations, docs, episodes, errors, fsrs, gate, graph, grounding, growth, gui, health, inbox, ingestion, jobs, loom, onboard, pack, personality, platform, portability, projects, prompts, schema, scratchpad, search, security, sessions, skills, soma, tasks, thymus, webhooks) lives in `engram-server/src/routes/`.
+The full endpoint list (activity, agents, approvals, artifacts, auth_keys, batch, conversations, docs, episodes, errors, fsrs, gate, graph, grounding, growth, gui, health, inbox, ingestion, jobs, loom, onboard, pack, personality, platform, portability, projects, prompts, schema, scratchpad, search, security, sessions, skills, soma, tasks, thymus, webhooks) lives in `kleos-server/src/routes/`.
 
 </details>
 
@@ -393,44 +397,44 @@ The full endpoint list (activity, agents, approvals, artifacts, auth_keys, batch
 <details>
 <summary><strong>CLI</strong></summary>
 
-`engram-cli` wraps the HTTP API. Same workspace, same build.
+`kleos-cli` wraps the HTTP API. Same workspace, same build.
 
 ```bash
-cargo build --release -p engram-cli
+cargo build --release -p kleos-cli
 # or
-cargo run -p engram-cli -- --help
+cargo run -p kleos-cli -- --help
 ```
 
 ```bash
-export ENGRAM_URL=http://localhost:4200
-export ENGRAM_API_KEY=eg_your_key
+export KLEOS_URL=http://localhost:4200
+export KLEOS_API_KEY=eg_your_key
 ```
 
 ```bash
-engram-cli store "Deployed auth migration to production" --category state --importance 0.9
-engram-cli search "deployment history" --limit 5
-engram-cli context "current infrastructure state" --limit 5
-engram-cli recall 42
-engram-cli list --limit 20
-engram-cli delete 42
-engram-cli guard "rm -rf /var/data"
-engram-cli bootstrap
+kleos-cli store "Deployed auth migration to production" --category state --importance 0.9
+kleos-cli search "deployment history" --limit 5
+kleos-cli context "current infrastructure state" --limit 5
+kleos-cli recall 42
+kleos-cli list --limit 20
+kleos-cli delete 42
+kleos-cli guard "rm -rf /var/data"
+kleos-cli bootstrap
 ```
 
 ### Credential Management (via credd)
 
 ```bash
-engram-cli cred get <category> <name>          # get a secret
-engram-cli cred get <category> <name> --raw    # raw value only
-engram-cli cred set <category> <name>          # set (prompted for value)
-engram-cli cred list                           # list all secrets
-engram-cli cred delete <category> <name>       # delete
-engram-cli cred agent-create <name>            # create agent key
-engram-cli cred agent-list                     # list agent keys
-engram-cli cred agent-revoke <name>            # revoke agent key
+kleos-cli cred get <category> <name>          # get a secret
+kleos-cli cred get <category> <name> --raw    # raw value only
+kleos-cli cred set <category> <name>          # set (prompted for value)
+kleos-cli cred list                           # list all secrets
+kleos-cli cred delete <category> <name>       # delete
+kleos-cli cred agent-create <name>            # create agent key
+kleos-cli cred agent-list                     # list agent keys
+kleos-cli cred agent-revoke <name>            # revoke agent key
 ```
 
-Every command takes `--server` and `--key` overrides, or reads `ENGRAM_URL` / `ENGRAM_API_KEY` from the environment. Credential commands talk to the credd daemon at `CREDD_URL` (default `http://127.0.0.1:4400`).
+Every command takes `--server` and `--key` overrides, or reads `KLEOS_URL` / `KLEOS_API_KEY` from the environment (the server also accepts the legacy `ENGRAM_URL` / `ENGRAM_API_KEY` names). Credential commands talk to the credd daemon at `CREDD_URL` (default `http://127.0.0.1:4400`).
 
 </details>
 
@@ -438,7 +442,7 @@ Every command takes `--server` and `--key` overrides, or reads `ENGRAM_URL` / `E
 <details>
 <summary><strong>Sidecar</strong></summary>
 
-`engram-sidecar` runs next to a single agent session. It proxies requests to the main Engram server while providing:
+`kleos-sidecar` runs next to a single agent session. It proxies requests to the main Kleos server while providing:
 
 - **Session-scoped context** with local caching for fast recall
 - **File watcher** for Claude Code session JSONL files (auto-extracts memories)
@@ -448,12 +452,12 @@ Every command takes `--server` and `--key` overrides, or reads `ENGRAM_URL` / `E
 - **Local LLM integration** -- Ollama probe for conversation compression
 
 ```bash
-ENGRAM_URL=http://localhost:4200 \
-ENGRAM_API_KEY=eg_your_key \
-engram-sidecar --engram-url http://localhost:4200 --watch
+KLEOS_URL=http://localhost:4200 \
+KLEOS_API_KEY=eg_your_key \
+kleos-sidecar --kleos-url http://localhost:4200 --watch
 ```
 
-Default port: `7711`. The sidecar is a lightweight HTTP service that talks to `engram-server` for storage and search. It doesn't run embeddings locally.
+Default port: `7711`. The sidecar is a lightweight HTTP service that talks to `kleos-server` for storage and search. It doesn't run embeddings locally.
 
 </details>
 
@@ -463,14 +467,16 @@ Default port: `7711`. The sidecar is a lightweight HTTP service that talks to `e
 
 Configuration is layered: defaults -> TOML file -> environment variable overrides. Env vars always win.
 
-TOML config is loaded from (in order): `ENGRAM_CONFIG_FILE` env var, `./engram.toml` in CWD, or `~/.config/engram/config.toml`.
+TOML config is loaded from (in order): `KLEOS_CONFIG_FILE` env var, `./kleos.toml` in CWD, or `~/.config/kleos/config.toml`.
 
-Example `engram.toml`:
+> **Env var naming:** `KLEOS_*` is the preferred prefix going forward. The server also reads `ENGRAM_*` equivalents for backward compatibility (the env shim from the rename stage handles the fallback). Both prefixes work; `KLEOS_*` takes precedence when both are set.
+
+Example `kleos.toml`:
 
 ```toml
 host = "0.0.0.0"
 port = 4200
-db_path = "/data/engram.db"
+db_path = "/data/kleos.db"
 data_dir = "/data"
 backup_enabled = true
 backup_interval_secs = 21600
@@ -487,38 +493,38 @@ Anything not specified falls back to its default. Secret fields (`api_key`, `gui
 
 ### Core
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ENGRAM_HOST` | `127.0.0.1` | Bind address |
-| `ENGRAM_PORT` | `4200` | Server port |
-| `ENGRAM_DB_PATH` | `engram.db` | SQLite database file |
-| `ENGRAM_DATA_DIR` | `./data` | Data directory for models, LanceDB, artifacts |
-| `ENGRAM_API_KEY` | unset | Bootstrap admin key override |
-| `ENGRAM_GUI_PASSWORD` | unset | GUI login password |
-| `ENGRAM_GUI_BUILD_DIR` | unset | Path to pre-built GUI static assets |
-| `ENGRAM_DEFAULT_RETENTION` | `0.9` | Default FSRS retention target for new memories |
-| `ENGRAM_CONFIG_FILE` | unset | Override TOML config file path |
-| `RUST_LOG` | `info` | `tracing-subscriber` filter: `debug`, `info`, `warn`, `error` |
+| Variable | Deprecated alias | Default | Description |
+|----------|-----------------|---------|-------------|
+| `KLEOS_HOST` | `ENGRAM_HOST` | `127.0.0.1` | Bind address |
+| `KLEOS_PORT` | `ENGRAM_PORT` | `4200` | Server port |
+| `KLEOS_DB_PATH` | `ENGRAM_DB_PATH` | `kleos.db` (falls back to `engram.db` if present) | SQLite database file |
+| `KLEOS_DATA_DIR` | `ENGRAM_DATA_DIR` | `./data` | Data directory for models, LanceDB, artifacts |
+| `KLEOS_API_KEY` | `ENGRAM_API_KEY` | unset | Bootstrap admin key override |
+| `KLEOS_GUI_PASSWORD` | `ENGRAM_GUI_PASSWORD` | unset | GUI login password |
+| `KLEOS_GUI_BUILD_DIR` | `ENGRAM_GUI_BUILD_DIR` | unset | Path to pre-built GUI static assets |
+| `KLEOS_DEFAULT_RETENTION` | `ENGRAM_DEFAULT_RETENTION` | `0.9` | Default FSRS retention target for new memories |
+| `KLEOS_CONFIG_FILE` | `ENGRAM_CONFIG_FILE` | unset | Override TOML config file path |
+| `RUST_LOG` | -- | `info` | `tracing-subscriber` filter: `debug`, `info`, `warn`, `error` |
 
 ### Embeddings and Reranker
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ENGRAM_EMBEDDING_DIM` | `1024` | Embedding dimension |
-| `ENGRAM_EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding model name |
-| `ENGRAM_EMBEDDING_MODEL_DIR` | auto | Override ONNX model directory (must hold `tokenizer.json` + ONNX file) |
-| `ENGRAM_ONNX_MODEL_FILE` | `model_quantized.onnx` | Model filename inside the model dir |
-| `ENGRAM_EMBEDDING_MAX_SEQ` | `512` | Max token sequence length |
-| `ENGRAM_EMBEDDING_OFFLINE_ONLY` | `false` | Block model downloads from HuggingFace |
-| `ENGRAM_EMBEDDING_CHUNK_MAX_CHARS` | `1440` | Max characters per ingestion chunk |
-| `ENGRAM_EMBEDDING_CHUNK_OVERLAP` | `160` | Overlap between chunks |
-| `ENGRAM_EMBEDDING_CHUNK_MAX_CHUNKS` | `6` | Max chunks per document |
-| `ENGRAM_RERANKER_ENABLED` | `1` | Set `0` to disable cross-encoder reranking |
-| `ENGRAM_RERANKER_TOP_K` | `12` | Rerank top K candidates |
-| `ENGRAM_RERANKER_MODEL_DIR` | auto | Override reranker ONNX model directory |
-| `ENGRAM_USE_LANCE_INDEX` | `1` | Set `0` to disable the LanceDB vector backend |
-| `ENGRAM_LANCE_INDEX_PATH` | auto | Override LanceDB index directory |
-| `ENGRAM_VECTOR_DIMENSIONS` | `1024` | Vector dimensions (must match embedding model) |
+| Variable | Deprecated alias | Default | Description |
+|----------|-----------------|---------|-------------|
+| `KLEOS_EMBEDDING_DIM` | `ENGRAM_EMBEDDING_DIM` | `1024` | Embedding dimension |
+| `KLEOS_EMBEDDING_MODEL` | `ENGRAM_EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding model name |
+| `KLEOS_EMBEDDING_MODEL_DIR` | `ENGRAM_EMBEDDING_MODEL_DIR` | auto | Override ONNX model directory (must hold `tokenizer.json` + ONNX file) |
+| `KLEOS_ONNX_MODEL_FILE` | `ENGRAM_ONNX_MODEL_FILE` | `model_quantized.onnx` | Model filename inside the model dir |
+| `KLEOS_EMBEDDING_MAX_SEQ` | `ENGRAM_EMBEDDING_MAX_SEQ` | `512` | Max token sequence length |
+| `KLEOS_EMBEDDING_OFFLINE_ONLY` | `ENGRAM_EMBEDDING_OFFLINE_ONLY` | `false` | Block model downloads from HuggingFace |
+| `KLEOS_EMBEDDING_CHUNK_MAX_CHARS` | `ENGRAM_EMBEDDING_CHUNK_MAX_CHARS` | `1440` | Max characters per ingestion chunk |
+| `KLEOS_EMBEDDING_CHUNK_OVERLAP` | `ENGRAM_EMBEDDING_CHUNK_OVERLAP` | `160` | Overlap between chunks |
+| `KLEOS_EMBEDDING_CHUNK_MAX_CHUNKS` | `ENGRAM_EMBEDDING_CHUNK_MAX_CHUNKS` | `6` | Max chunks per document |
+| `KLEOS_RERANKER_ENABLED` | `ENGRAM_RERANKER_ENABLED` | `1` | Set `0` to disable cross-encoder reranking |
+| `KLEOS_RERANKER_TOP_K` | `ENGRAM_RERANKER_TOP_K` | `12` | Rerank top K candidates |
+| `KLEOS_RERANKER_MODEL_DIR` | `ENGRAM_RERANKER_MODEL_DIR` | auto | Override reranker ONNX model directory |
+| `KLEOS_USE_LANCE_INDEX` | `ENGRAM_USE_LANCE_INDEX` | `1` | Set `0` to disable the LanceDB vector backend |
+| `KLEOS_LANCE_INDEX_PATH` | `ENGRAM_LANCE_INDEX_PATH` | auto | Override LanceDB index directory |
+| `KLEOS_VECTOR_DIMENSIONS` | `ENGRAM_VECTOR_DIMENSIONS` | `1024` | Vector dimensions (must match embedding model) |
 
 ### LLM (Ollama)
 
@@ -534,47 +540,47 @@ The LLM drives fact extraction, decomposition, consolidation, and growth reflect
 
 ### PageRank and Graph
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ENGRAM_PAGERANK_ENABLED` | `1` | Set `0` to skip background PageRank refresh |
-| `ENGRAM_PAGERANK_REFRESH_INTERVAL` | `300` | Worker refresh cadence (seconds) |
-| `ENGRAM_PAGERANK_DIRTY_THRESHOLD` | `100` | Dirty-edge count that forces a refresh |
-| `ENGRAM_PAGERANK_MAX_CONCURRENT` | `2` | Max concurrent PageRank workers |
+| Variable | Deprecated alias | Default | Description |
+|----------|-----------------|---------|-------------|
+| `KLEOS_PAGERANK_ENABLED` | `ENGRAM_PAGERANK_ENABLED` | `1` | Set `0` to skip background PageRank refresh |
+| `KLEOS_PAGERANK_REFRESH_INTERVAL` | `ENGRAM_PAGERANK_REFRESH_INTERVAL` | `300` | Worker refresh cadence (seconds) |
+| `KLEOS_PAGERANK_DIRTY_THRESHOLD` | `ENGRAM_PAGERANK_DIRTY_THRESHOLD` | `100` | Dirty-edge count that forces a refresh |
+| `KLEOS_PAGERANK_MAX_CONCURRENT` | `ENGRAM_PAGERANK_MAX_CONCURRENT` | `2` | Max concurrent PageRank workers |
 
 ### Backup
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ENGRAM_BACKUP_ENABLED` | `false` | Enable auto-backup background task |
-| `ENGRAM_BACKUP_INTERVAL_SECS` | `21600` | Seconds between backups (default: 6 hours) |
-| `ENGRAM_BACKUP_DIR` | `backups` | Backup directory (relative to data_dir) |
-| `ENGRAM_BACKUP_RETENTION` | `14` | Max hourly backup files to retain |
-| `ENGRAM_BACKUP_RETENTION_DAILY` | `30` | Max daily backup files to retain |
+| Variable | Deprecated alias | Default | Description |
+|----------|-----------------|---------|-------------|
+| `KLEOS_BACKUP_ENABLED` | `ENGRAM_BACKUP_ENABLED` | `false` | Enable auto-backup background task |
+| `KLEOS_BACKUP_INTERVAL_SECS` | `ENGRAM_BACKUP_INTERVAL_SECS` | `21600` | Seconds between backups (default: 6 hours) |
+| `KLEOS_BACKUP_DIR` | `ENGRAM_BACKUP_DIR` | `backups` | Backup directory (relative to data_dir) |
+| `KLEOS_BACKUP_RETENTION` | `ENGRAM_BACKUP_RETENTION` | `14` | Max hourly backup files to retain |
+| `KLEOS_BACKUP_RETENTION_DAILY` | `ENGRAM_BACKUP_RETENTION_DAILY` | `30` | Max daily backup files to retain |
 
 ### Encryption at Rest
 
-Encryption is **off by default**. Engram runs with a plain SQLite database out of the box. To enable SQLCipher encryption, set `ENGRAM_ENCRYPTION_MODE` to one of:
+Encryption is **off by default**. Kleos runs with a plain SQLite database out of the box. To enable SQLCipher encryption, set `KLEOS_ENCRYPTION_MODE` (or the deprecated `ENGRAM_ENCRYPTION_MODE`) to one of:
 
 | Mode | Description |
 |------|-------------|
 | `none` | No encryption (default). Database opens without `PRAGMA key`. |
-| `keyfile` | Read a 32-byte raw key from `~/.config/engram/dbkey`. File must be `chmod 600` on Unix. |
-| `env` | Read `ENGRAM_DB_KEY` environment variable (64 hex characters = 32 bytes). |
+| `keyfile` | Read a 32-byte raw key from `~/.config/kleos/dbkey`. File must be `chmod 600` on Unix. |
+| `env` | Read `KLEOS_DB_KEY` environment variable (64 hex characters = 32 bytes). |
 | `yubikey` | Derive key from YubiKey HMAC-SHA1 challenge-response (slot 2) via Argon2id. |
 
 **Keyfile setup:**
 
 ```bash
-head -c 32 /dev/urandom > ~/.config/engram/dbkey
-chmod 600 ~/.config/engram/dbkey
-ENGRAM_ENCRYPTION_MODE=keyfile engram-server
+head -c 32 /dev/urandom > ~/.config/kleos/dbkey
+chmod 600 ~/.config/kleos/dbkey
+KLEOS_ENCRYPTION_MODE=keyfile kleos-server
 ```
 
 **Environment variable setup:**
 
 ```bash
-export ENGRAM_DB_KEY=$(head -c 32 /dev/urandom | xxd -p -c 64)
-ENGRAM_ENCRYPTION_MODE=env engram-server
+export KLEOS_DB_KEY=$(head -c 32 /dev/urandom | xxd -p -c 64)
+KLEOS_ENCRYPTION_MODE=env kleos-server
 ```
 
 **YubiKey setup:**
@@ -583,20 +589,20 @@ YubiKey mode uses HMAC-SHA1 challenge-response (slot 2) to derive the encryption
 
 ```bash
 ykman otp chalresp --generate 2
-engram-credd --encryption-mode yubikey
-ENGRAM_ENCRYPTION_MODE=yubikey engram-server
+kleos-credd --encryption-mode yubikey
+KLEOS_ENCRYPTION_MODE=yubikey kleos-server
 ```
 
 ### Security
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ENGRAM_BOOTSTRAP_SECRET` | unset | Pre-shared secret required for `POST /bootstrap`. Disabled when unset. |
-| `ENGRAM_TRUSTED_PROXIES` | unset | Comma-separated IPs of trusted reverse proxies (for X-Forwarded-For) |
-| `ENGRAM_ALLOWED_ORIGINS` | unset | Comma-separated origins for CORS (restricted by default) |
-| `ENGRAM_AUTH_KEY_ROTATION_GRACE_HOURS` | `24` | Grace period for old key after rotation |
+| Variable | Deprecated alias | Default | Description |
+|----------|-----------------|---------|-------------|
+| `KLEOS_BOOTSTRAP_SECRET` | `ENGRAM_BOOTSTRAP_SECRET` | unset | Pre-shared secret required for `POST /bootstrap`. Disabled when unset. |
+| `KLEOS_TRUSTED_PROXIES` | `ENGRAM_TRUSTED_PROXIES` | unset | Comma-separated IPs of trusted reverse proxies (for X-Forwarded-For) |
+| `KLEOS_ALLOWED_ORIGINS` | `ENGRAM_ALLOWED_ORIGINS` | unset | Comma-separated origins for CORS (restricted by default) |
+| `KLEOS_AUTH_KEY_ROTATION_GRACE_HOURS` | `ENGRAM_AUTH_KEY_ROTATION_GRACE_HOURS` | `24` | Grace period for old key after rotation |
 
-See `engram-lib/src/config.rs` for the full set, including Eidolon, gate, growth, sessions, and prompt configuration.
+See `kleos-lib/src/config.rs` for the full set, including Eidolon, gate, growth, sessions, and prompt configuration.
 
 </details>
 
@@ -607,8 +613,8 @@ See `engram-lib/src/config.rs` for the full set, including Eidolon, gate, growth
 ```bash
 cargo check --workspace                 # verify it compiles
 cargo test --workspace                  # run tests (in-memory SQLite)
-cargo test -p engram-lib                # library only
-cargo test -p engram-server             # server only
+cargo test -p kleos-lib                 # library only
+cargo test -p kleos-server              # server only
 cargo clippy --workspace -- -D warnings # lint
 ```
 

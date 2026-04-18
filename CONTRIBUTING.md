@@ -1,4 +1,4 @@
-# Contributing to Engram
+# Contributing to Kleos (formerly Engram)
 
 ## Getting Started
 
@@ -29,21 +29,21 @@ SQLite is vendored via `rusqlite` (bundled feature). SQLCipher is vendored at co
 
 ```
 engram-rust/
-  engram-lib/           Core library -- all domain logic lives here
-  engram-server/        HTTP API server (Axum)
-  engram-cli/           CLI client over the HTTP API
-  engram-sidecar/       Session-scoped memory proxy
-  engram-mcp/           MCP server (Model Context Protocol)
-  engram-cred/          Credential management library
-  engram-credd/         Credential management daemon
-  engram-approval-tui/  Approval workflow TUI (WIP)
-  engram-migrate/       libsql -> rusqlite ETL tool
+  kleos-lib/            Core library -- all domain logic lives here
+  kleos-server/         HTTP API server (Axum)
+  kleos-cli/            CLI client over the HTTP API
+  kleos-sidecar/        Session-scoped memory proxy
+  kleos-mcp/            MCP server (Model Context Protocol)
+  kleos-cred/           Credential management library
+  kleos-credd/          Credential management daemon
+  kleos-approval-tui/   Approval workflow TUI (WIP)
+  kleos-migrate/        libsql -> rusqlite ETL tool
   agent-forge/          Structured reasoning CLI
   sdk/                  Client SDKs (TypeScript)
   hooks/                Claude Code hook scripts
 ```
 
-**Key rule:** domain logic goes in `engram-lib`. Server routes go in `engram-server`. Don't put business logic in the server crate.
+**Key rule:** domain logic goes in `kleos-lib`. Server routes go in `kleos-server`. Don't put business logic in the server crate.
 
 ## Development Workflow
 
@@ -119,7 +119,7 @@ async fn test_search_returns_recent_memories_first() {
 
 ## Common Pitfalls
 
-1. **Wrong import paths** -- check `engram-lib/src/lib.rs` for what's exported
+1. **Wrong import paths** -- check `kleos-lib/src/lib.rs` for what's exported
 2. **Forgetting `pub mod`** -- new modules must be declared in parent `mod.rs`
 3. **Moving out of borrows** -- use `.clone()` or restructure; the compiler tells you exactly what's wrong
 4. **Missing Cargo.toml deps** -- add workspace deps before using them
@@ -130,28 +130,28 @@ async fn test_search_returns_recent_memories_first() {
 
 | Crate | Flag | Default | Purpose |
 |-------|------|---------|---------|
-| `engram-lib` | `brain_hopfield` | on | Brain module, Hopfield networks, spreading activation |
-| `engram-lib` | `sqlcipher` | off | SQLCipher at-rest encryption (required for `ENGRAM_ENCRYPTION_MODE` != `none`) |
-| `engram-lib` | `bundled-sqlite` | off | Vendor SQLite from source (needed on Windows) |
-| `engram-lib` | `tenant-sharding` | off | Per-tenant database sharding |
-| `engram-lib` | `test-utils` | off | Test helpers for downstream crates |
-| `engram-lib` | `credd-raw` | off | Raw credential access support |
-| `engram-mcp` | `http` | off | HTTP transport (default is stdio only) |
-| `engram-cred` | `gui` | off | eframe-based credential manager GUI |
+| `kleos-lib` | `brain_hopfield` | on | Brain module, Hopfield networks, spreading activation |
+| `kleos-lib` | `sqlcipher` | off | SQLCipher at-rest encryption (required for `KLEOS_ENCRYPTION_MODE` != `none`) |
+| `kleos-lib` | `bundled-sqlite` | off | Vendor SQLite from source (needed on Windows) |
+| `kleos-lib` | `tenant-sharding` | off | Per-tenant database sharding |
+| `kleos-lib` | `test-utils` | off | Test helpers for downstream crates |
+| `kleos-lib` | `credd-raw` | off | Raw credential access support |
+| `kleos-mcp` | `http` | off | HTTP transport (default is stdio only) |
+| `kleos-cred` | `gui` | off | eframe-based credential manager GUI |
 
-`sqlcipher` and `bundled-sqlite` are mutually exclusive with `libsql` in the same binary (symbol collision). This is why `engram-migrate` cannot enable `sqlcipher`.
+`sqlcipher` and `bundled-sqlite` are mutually exclusive with `libsql` in the same binary (symbol collision). This is why `kleos-migrate` cannot enable `sqlcipher`.
 
 ## Migration Tool
 
-`engram-migrate` is a one-shot ETL utility for migrating data from the old libsql-backed database to the current rusqlite + LanceDB backend. It reads the source database, transforms records, and writes them to the new format. Run it once during migration -- it is not part of normal operation.
+`kleos-migrate` is a one-shot ETL utility for migrating data from the old libsql-backed database to the current rusqlite + LanceDB backend. It reads the source database, transforms records, and writes them to the new format. Run it once during migration -- it is not part of normal operation.
 
 ```bash
-cargo run -p engram-migrate -- --source old-engram.db --target /data/engram
+cargo run -p kleos-migrate -- --source old-engram.db --target /data/kleos
 ```
 
 The `--target` is a directory -- rusqlite database and LanceDB index are created inside it. Use `--dry-run` to preview table counts and schema diffs without writing. Use `--skip-vectors` to copy relational data only.
 
-Note: `engram-migrate` has a linker conflict between libsqlite3-sys and libsql-ffi. It must be built separately and cannot share a binary with the server.
+Note: `kleos-migrate` has a linker conflict between libsqlite3-sys and libsql-ffi. It must be built separately and cannot share a binary with the server.
 
 ## Questions?
 
