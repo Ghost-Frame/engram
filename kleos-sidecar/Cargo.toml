@@ -1,11 +1,11 @@
 [package]
-name = "engram-sidecar"
+name = "kleos-sidecar"
 version = "0.3.1"
 edition = "2021"
 rust-version.workspace = true
 
 [dependencies]
-engram-lib = { path = "../engram-lib" }
+kleos-lib = { path = "../kleos-lib" }
 tokio = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }
@@ -25,4 +25,4 @@ rusqlite = { workspace = true }
 
 # Windows needs bundled SQLCipher since there's no system sqlite3.lib
 [target.'cfg(windows)'.dependencies]
-engram-lib = { path = "../engram-lib", features = ["sqlcipher"] }
+kleos-lib = { path = "../kleos-lib", features = ["sqlcipher"] }

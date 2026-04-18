@@ -1,5 +1,5 @@
 [package]
-name = "engram-mcp"
+name = "kleos-mcp"
 version = "0.3.1"
 edition = "2021"
 rust-version.workspace = true
@@ -9,12 +9,15 @@ repository = "https://github.com/Ghost-Frame/Engram-rust"
 homepage = "https://engram.lol"
 readme = "../README.md"
 
+[lib]
+name = "engram_mcp"
+
 [features]
 default = []
 http = ["dep:axum", "dep:tower-http", "dep:subtle"]
 
 [dependencies]
-engram-lib = { path = "../engram-lib", version = "0.3.1" }
+kleos-lib = { path = "../kleos-lib", version = "0.3.1" }
 rusqlite = { workspace = true }
 axum = { workspace = true, optional = true }
 tower-http = { workspace = true, optional = true }
