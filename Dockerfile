@@ -31,7 +31,7 @@ RUN cargo build --release -p kleos-server -p kleos-cli
 # =============================================================================
 FROM debian:bookworm-slim AS runtime
 
-LABEL org.opencontainers.image.source="https://github.com/Ghost-Frame/Engram" \
+LABEL org.opencontainers.image.source="https://github.com/Ghost-Frame/Kleos" \
       org.opencontainers.image.description="Kleos memory server (formerly Engram) -- personal knowledge graph and semantic memory store" \
       org.opencontainers.image.licenses="Elastic-2.0"
 
